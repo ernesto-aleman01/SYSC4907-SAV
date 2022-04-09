@@ -3,13 +3,12 @@ import time
 
 from pid_controller import PIDController
 from pid_controller import ThrottleAction
-from cluster_detection import ClusterDetection
 
 import rospy
 from mapping_navigation.msg import PathData
 from sensor_msgs.msg import PointCloud
 from std_msgs.msg import Float64, Float64MultiArray
-import os
+
 
 class CruiseControl:
 
@@ -17,9 +16,6 @@ class CruiseControl:
         self.steeringPub = rospy.Publisher("steering", Float64, queue_size = 10)
         self.brakingPub = rospy.Publisher("braking", Float64, queue_size = 10)
         self.throttlePub = rospy.Publisher("throttling", Float64, queue_size = 10)
-        self.lidarPub = rospy.Publisher("lidar_data", Float64MultiArray, queue_size = 10)
-
-        self.cluster_detection = ClusterDetection()
 
         self.pidController = PIDController()
         self.currentSpeed = 0.0
@@ -30,7 +26,6 @@ class CruiseControl:
 
     def listener(self):
         rospy.init_node("cruise_control", anonymous=True)
-        rospy.Subscriber("lidar", PointCloud, self.handle_lidar_data)
         # Define Path data structure
         rospy.Subscriber("pathData", PathData, self.handle_path_data)
         rospy.Subscriber("sensor/speed", Float64, self.handle_speed_data)
@@ -44,12 +39,6 @@ class CruiseControl:
         while not rospy.is_shutdown():
             self.publish_results()
             rate.sleep()
-
-    def handle_lidar_data(self, data: PointCloud):
-        # Bounding boxes are sent as a flat array
-        float_array = Float64MultiArray()
-        float_array.data = self.cluster_detection.find_bounding_boxes(data.points)
-        self.lidarPub.publish(float_array)
 
     def handle_path_data(self, data):
         print("Obtained path data")
