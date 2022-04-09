@@ -11,7 +11,12 @@ class LidarObjectDetect:
         self.cluster_detection = ClusterDetection()
 
     def listener(self):
+        rospy.init_node("lidar_object_detect", anonymous=True)
         rospy.Subscriber("lidar", PointCloud, self.handle_lidar_data)
+
+        rate = rospy.Rate(30)
+        while not rospy.is_shutdown():
+            rate.sleep()
 
     def handle_lidar_data(self, data: PointCloud):
         # Bounding boxes are sent as a flat array
@@ -21,5 +26,5 @@ class LidarObjectDetect:
 
 if __name__ == "__main__":
     # Do something
-    cc = LidarObjectDetect()
-    cc.listener()
+    lidar_detection = LidarObjectDetect()
+    lidar_detection.listener()
