@@ -3,13 +3,6 @@ import time
 import os
 from enum import Enum
 
-# The output of the PID controller is always a positive number after being
-# translated to a value that AirSim can use for acceleration or braking.
-# Thus a distinction needs to be made if the returned value is for accelerating or braking
-class ThrottleAction(Enum):
-    Accelerate = 0
-    Brake = 1
-
 class PIDController:
 
     def __init__(self):
@@ -57,18 +50,15 @@ class PIDController:
         differential_input = self.kD * ((self.speed_difference - self.last_error) / delta_time)
         self.last_error = self.speed_difference
 
-        # Compute the value for the throttle or the braking. The output of the PID controller does not correlate to a
-        # range of [0, 1] as required for the throttle or brake, hence the call to pidToCarValues
+        # Compute the value for the throttle. The output of the PID controller does not correlate to a
+        # range of [0, 1] as required for the throttle or brake, hence the call to pidToCarValues. If the controller
+        # output is 0, then by setting the throttle to 0, it effectively makes the car gradually slow down.
 
         pid_controller_output = proportional_input + integral_input + differential_input
         translated_value = 0.0
-        action = ThrottleAction.Accelerate
 
         if pid_controller_output > 0.0:
             translated_value = self.pidToCarValues(pid_controller_output)
-        else:
-            translated_value = self.pidToCarValues(-pid_controller_output)
-            action = ThrottleAction.Brake
 
         # Need to stop integral windup. If PID controller is saying to brake or accelerate but car isn't for whatever reason
         # then the integral will increase in magnitude continuously. Then, when the car is free to move, the pid output will stay near max
@@ -93,4 +83,4 @@ class PIDController:
                 else:
                     self.kI = self.potential_Ki_value
 
-        return action, translated_value
+        return translated_value

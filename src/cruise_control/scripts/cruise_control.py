@@ -57,16 +57,9 @@ class CruiseControl:
             return
 
         self.lastTime += delta_time
-        (throttle_action, throttle_value) = self.pidController.update_pid_output(self.currentSpeed, delta_time)
-
-        if throttle_action == ThrottleAction.Accelerate:
-            self.throttlePub.publish(throttle_value)
-            self.brakingPub.publish(0.0)
-            rospy.loginfo("Setting throttle: {}".format(throttle_value))
-        else:
-            self.brakingPub.publish(throttle_value)
-            self.throttlePub.publish(0.0)
-            rospy.loginfo("Setting brakes: {}".format(throttle_value))
+        throttle_value = self.pidController.update_pid_output(self.currentSpeed, delta_time)
+        self.throttlePub.publish(throttle_value)
+        rospy.loginfo("Setting throttle: {}".format(throttle_value))
 
         self.outputSpeedFile.write("{},{}\n".format(delta_time, self.currentSpeed))
 
