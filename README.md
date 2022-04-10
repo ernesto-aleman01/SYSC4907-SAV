@@ -47,3 +47,6 @@ executables for MacOS and only some for Linux.
     > ***(Required everytime ROS console is opened)*** Execute: .\devel\setup.bat
     >
     > Execute: roslaunch central_control full_system.launch
+    > 
+    > There is a chance of getting this message in the ROS console: WARNING:tornado.general:Connect error on fd 1372: WSAECONNREFUSED.
+     To fix this, search the code for "airsim.CarClient(ip=host_ip)" and replace it with "airsim.CarClient()" .
