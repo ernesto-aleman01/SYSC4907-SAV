@@ -2,7 +2,6 @@
 import time
 
 from pid_controller import PIDController
-from pid_controller import ThrottleAction
 
 import rospy
 from mapping_navigation.msg import PathData
