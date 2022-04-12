@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 
-import setup_path 
 import airsim
 
 import rospy
-from sensors.msg import Speed
 from std_msgs.msg import Float64
 
 def speedometer():

@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
-import cv2 as cv
+
 import numpy as np
-import time
-import math
 import lane_detect
 from typing import List, Tuple
-from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 from lane_bound_status import LaneBoundStatus
 

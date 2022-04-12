@@ -2,9 +2,7 @@
 
 import rospy
 import lane_analyze
-from std_msgs.msg import Float64, UInt8
-from geometry_msgs.msg import PoseStamped
-from sensor_msgs.msg import PointCloud, Image
+from sensor_msgs.msg import Image
 from lane_keep_assist.msg import LaneStatus, LaneLine
 from lane_bound_status import LaneBoundStatus
 
@@ -78,8 +76,8 @@ class LaneKeepAssist:
             self.road_colour = road_colour
             self.first_detection = False
 
-        # If the majority colour, aka segment, detection has chaned then the car is no longer detecting the road, it is looking at the wrong segment.
-        # Therefore ignore the output from the road detector
+        # If the majority colour, aka segment, detection has chaned then the car is no longer detecting the road,
+        # it is looking at the wrong segment. Therefore ignore the output from the road detector
         if self.road_colour != road_colour:
             self.gradient_state = LaneBoundStatus.NO_BOUNDS
             self.hls_state = LaneBoundStatus.NO_BOUNDS

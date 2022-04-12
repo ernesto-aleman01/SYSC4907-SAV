@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 
 import time
-import setup_path 
 import airsim
 
 import rospy
-from sensors.msg import Speed
+
 from std_msgs.msg import Float64
 
 

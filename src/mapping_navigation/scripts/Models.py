@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from enum import Enum
-from typing import Optional, List, Dict, Tuple
+from typing import List, Dict, Tuple
 
 
 # Model a point on the canvas
