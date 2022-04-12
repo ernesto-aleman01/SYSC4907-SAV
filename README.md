@@ -12,7 +12,7 @@ executables for MacOS and only some for Linux.
 
 2. Download an airsim release. These can be found here: https://github.com/Microsoft/AirSim/releases
 
-   >Version 1.6 was used, but restrictions for not using other versions are not known
+   >Version 1.6 was used, but restrictions for using other versions are not known
    >
    >7z is recommended for extracting if the scene consists of multiple zipped files (read "Downloading large environments" in a release section)
    
