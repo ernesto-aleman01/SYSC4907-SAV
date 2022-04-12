@@ -141,7 +141,6 @@ class CentralControl:
         rospy.init_node("central_control", anonymous=True)
         rospy.Subscriber("lane_info", LaneStatus, self.handle_lane_data)
         rospy.Subscriber("navigation", PathData, self.handle_navigation_data)
-        rospy.Subscriber("braking", Float64, self.handle_breaking_data)
         rospy.Subscriber("throttling", Float64, self.handle_throttling_data)
         rospy.Subscriber("object_detection", DetectionResults, self.handle_object_recognition)
         rospy.Subscriber("sensor/speed", Float64, self.handle_speed)
@@ -326,9 +325,6 @@ class CentralControl:
 
         self.approachingIntersection = RoadWarning(navigation_data.next_segment) == RoadWarning.INTERSECTION_AHEAD or \
                                    RoadSegmentType(navigation_data.current_segment) == RoadSegmentType.INTERSECTION
-
-    def handle_breaking_data(self, braking_data):
-        pass
 
     def handle_throttling_data(self, throttling_data: Float64):
         self.car_controls.throttle = throttling_data.data
