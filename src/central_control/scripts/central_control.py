@@ -282,9 +282,6 @@ class CentralControl:
             rate.sleep()
             self.tick += 1
 
-    # def control(self):
-    #     print("Control loop")
-
     def handle_lane_data(self, lane_data: LaneStatus):
         """
         Results from lane detection

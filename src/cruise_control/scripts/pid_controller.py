@@ -1,7 +1,5 @@
 import math
-import time
 import os
-from enum import Enum
 
 class PIDController:
 
@@ -33,7 +31,7 @@ class PIDController:
         # with this, make the target speed higher than what is desired internally using self.speedAdjustmentFactor
         exp_factor = -1
         return max(1 - math.exp(exp_factor * inp), 0.0)
-    
+
     def update_target_speed(self, new_target_speed: float):
         self.target_speed = new_target_speed * self.speed_adjustment_factor
 
@@ -60,20 +58,21 @@ class PIDController:
         if pid_controller_output > 0.0:
             translated_value = self.pidToCarValues(pid_controller_output)
 
-        # Need to stop integral windup. If PID controller is saying to brake or accelerate but car isn't for whatever reason
-        # then the integral will increase in magnitude continuously. Then, when the car is free to move, the pid output will stay near max
-        # throttle or break even as it nears target speed as the integral component will take a long time to reach an appropriate
-        # brake or throttle value
+        # Need to stop integral windup. If PID controller is saying to brake or accelerate but car isn't for whatever
+        # reason then the integral will increase in magnitude continuously. Then, when the car is free to move,
+        # the pid output will stay near max throttle or break even as it nears target speed as the integral component
+        # will take a long time to reach an appropriate brake or throttle value
 
         clamping_has_effect = translated_value > self.clampValue
-        same_signs = (pid_controller_output > 0.0 and self.speed_difference > 0.0) or (pid_controller_output < 0.0 and self.speed_difference < 0.0)
+        same_signs = (pid_controller_output > 0.0 and self.speed_difference > 0.0) or \
+                     (pid_controller_output < 0.0 and self.speed_difference < 0.0)
 
-        # Integral windup occurs when car is told to accelerate when is it below the target speed; hence the same_signs variable.
-        # Same logic but in reverse when it comes to speed for braking
+        # Integral windup occurs when car is told to accelerate when is it below the target speed; hence the
+        # same_signs variable. Same logic but in reverse when it comes to speed for braking
         if clamping_has_effect and same_signs:
 
             # Integral windup may be detected, but if kI is still small let it continue changing. For example, if kI is
-            # 0.05 and integral windup is detected but kI is now at 0.25, jumping directly to the potentiaKiValue can
+            # 0.05 and integral windup is detected but kI is now at 0.25, jumping directly to the potential KiValue can
             # result in an abrupt change of kI
             if abs(self.kI) > self.potential_Ki_value:
                 if pid_controller_output < 0.0:

@@ -5,8 +5,7 @@ from pid_controller import PIDController
 
 import rospy
 from mapping_navigation.msg import PathData
-from sensor_msgs.msg import PointCloud
-from std_msgs.msg import Float64, Float64MultiArray
+from std_msgs.msg import Float64
 
 
 class CruiseControl:

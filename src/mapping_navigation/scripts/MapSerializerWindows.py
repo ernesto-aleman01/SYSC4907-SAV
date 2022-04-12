@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-import json
+
 import pickle
-from Models import RoadSegment, RoadSegmentType, Lane, MapModel
-from typing import Dict, List
+from Models import MapModel
 
 
 # Responsible for saving/loading a road_segments dict to/from a json file

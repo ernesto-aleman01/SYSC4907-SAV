@@ -9,7 +9,6 @@ author: Atsushi Sakai (@Atsushi_twi)
 """
 import numpy as np
 import math
-from typing import List, Tuple
 from map_information import *
 
 

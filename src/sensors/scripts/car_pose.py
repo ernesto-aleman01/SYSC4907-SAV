@@ -2,11 +2,7 @@
 
 import airsim
 import rospy
-import tf
-from std_msgs.msg import String
 from geometry_msgs.msg import PoseStamped
-import time
-
 
 def airpub():
     pub = rospy.Publisher("airsimPose", PoseStamped, queue_size=1)
