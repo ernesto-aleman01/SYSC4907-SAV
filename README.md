@@ -1,134 +1,52 @@
 ### Simulated Autonomous Vehicle Engine
 
-### Installation
+### Setting up the Environment
 
-How to install ROS on Windows:
-http://wiki.ros.org/Installation/Windows
+Windows was used for development. Using WSL is possible, but it is harder to set up. At time of writing, AirSim does not have
+executables for MacOS and only some for Linux.
 
-How to intall ROS on Linux (Ubuntu):
-http://wiki.ros.org/melodic/Installation/Ubuntu
+1. Install ROS noetic for windows. Follow the instructions here: http://wiki.ros.org/noetic/Installation/Windows
 
-How to install ROS on MAC:
-http://wiki.ros.org/kinetic/Installation/OSX/Homebrew/Source
-
-How to use AirSim with ROS:
-https://microsoft.github.io/AirSim/docs/ros/
-
-The `settings.json` in this folder contains camera settings that are needed to use the Lane Keep Assist. The resolution and other camera parameters should not be changed unless the LKA ROS node is changed as well
-The `settings.json` also contains settings for Lidar sensor position and its point cloud. The vehicle's starting point in the simulation can also be edited in this file. 
-
-#### Note
-
-All commands below must be run in a ROS console. A ROS console is one which has been setup with the appropriate setup scripts and has the necessary environment variables setup.
-
-It is recommended that developers of the system use Visual Studio Code. It is an open source IDE that contains excellent support Python and ROS APIs.
-
-**`roscore` is the first thing you should run when using ROS.**
-
-### ROS Tutorial [http://wiki.ros.org/ROS/Tutorials]: ###
-
-#### Frequently used commands:
-
-1. Creating or building a ROS workspace:
-`catkin_make when in project folder...`
-
-2. Setup the project
-`.\devel\setup.bat`
-
-	Ensure package path is setup:
-	echo %ROS_PACKAGE_PATH%
-
-Getting to the log package where the logs are stored:
-`roscd log`
-
-`rosls` looks at package without absolute path.
-
-Packages are stored in the src of the project.
-
-Creating a new package:
-Ensure that you are in the src directory
-`catkin_create_pkg <package name>`
-
-Build package:
-Run steps 1 and 2
-
-Enable AirSim to be used with ROS
-```
-# From https://microsoft.github.io/AirSim/docs/ros/
-# copy package
-mkdir -p ../catkin_ws/src/airsim/scripts/airsim
-cp AirSim/PythonClient/airsim/*.py ../catkin_ws/src/airsim/scripts/airsim
-
-# copy ROS examples
-cp AirSim/PythonClient/ros/*.py ../catkin_ws/src/airsim/scripts
-```
-
-#### ROS Nodes:
-
-From http://wiki.ros.org/ROS/Tutorials/UnderstandingNodes:
-`rosnode list` - lists all nodes running in ROS
-`rosnode info /<node>` - provide more information on the given node
-
-Running a new node:
-`rosrun <package> <node>`
-
-View nodes and their connections
-`rosrun rqt_graph rqt_graph`
-
-#### Topics and msg [http://wiki.ros.org/ROS/Tutorials/UnderstandingTopics]:
-```
-rostopic -h - list available commands for rostopic command
-	echo [topic] - Shows the data published for a topic
-
-	list [/topic] - returns all topics currently subed and pubed. (-h for more details)
-
-	type [/topic] - returns the message type of the published topic
-			Can also use 'rosmsg show <msg type>'
-```
-
-Publish to a topic from the command line for testing purposes:
-`rostopic pub [topic] [msg_type] [args]`
-Ex:
-`rostopic pub -1 /turtle1/cmd_vel geometry_msgs/Twist -- '[2.0, 0.0, 0.0]' '[0.0, 0.0, 1.8]'`
-http://wiki.ros.org/ROS/Tutorials/UnderstandingTopics
-
-#### ROS Services [http://wiki.ros.org/ROS/Tutorials/UnderstandingServicesParams]:
-`rosservice -h` for further details.
-
-##### Process of making Services and their messages [http://wiki.ros.org/ROS/Tutorials/CreatingMsgAndSrv]:
-The link above contains the valid type fields of messages and also here: http://wiki.ros.org/msg
-
-Messages are used with Messages are contained in a `msg` folder in ROS package directories.
-
-The `package.xml` and the `CMakeLists.txt` of the package must be updated to allow messages and services in the package.
-
-`rosmsg` - Command to interact with messages
-`rossrv` - Command to interact with services
-
-Creating Publisher/Subscriber in Rospy: http://wiki.ros.org/ROS/Tutorials/WritingPublisherSubscriber%28python%29
-Creating services in Rospy: http://wiki.ros.org/ROS/Tutorials/WritingServiceClient%28python%29
-
-#### Logging in ROS [http://wiki.ros.org/ROS/Tutorials/UsingRqtconsoleRoslaunch]:
-
-The link above contains an example on how to use the RQT Console and Logger.
-`rosrun rqt_console rqt_console` - Open the console for logging of ROS nodes
-`rosrun rqt_logger_level rqt_logger_level` - Open an application to control verbosity of logging
-
-The link above also contains information on how to create a launch file to start multiple nodes using the `roslaunch` command and a `.launch` file.
-
-### Troubleshooting
-If you are unable to find the SAVE packages in the windows workspace, please ensure that `ROS_PACKAGE_PATH` in the devel/setup.bat is setup correctly and there are no spaces in the path. Spaces may create issues for users.
+    > When following step 5, only step 5.1 is needed
 
 
-### Main Files of Interest for on boarding
-Obstacle Avoidance: obstacle_avoid/scripts/obstacle_avoid.py
+2. Download an airsim release. These can be found here: https://github.com/Microsoft/AirSim/releases
 
-Stop Sign Detection: stop_detect/scripts/stop_detect.py 
+   >Version 1.6 was used, but restrictions for not using other versions are not known
+   >
+   >7z is recommended for extracting if the scene consists of multiple zipped files (read "Downloading large environments" in a release section)
+   
+    >After extracting a sceen and trying to launch its executable, an error about not having DirectX installed may appear. In this case, DirectX runtime may have to be installed- this can be found here: https://www.microsoft.com/en-ca/download/confirmation.aspx?id=35
+    > * Extra important: If installing DirectX, read each installation screen carefully, and make sure to uncheck "Install the Bing Bar"- you're better than that
 
-Vehicle control request (Subsumption Arch): controller/scripts/controller.py
+3. ***Optional*** Install Pycharm IDE- this was used during development. Any environment that allows Python to be written works
 
-Navigation: navigation/
+### First Usage
 
-ACC: acc/scripts/acc.py 
+1. Open up a ROS console, and navigate to the folder with the cloned repository.
+   > Execute: catkin_make
+   > 
+   > Certain dependencies are needed. To get all of them, execute: pip install --no-deps -r dependencies.txt
+   
+    * Follow next step "Subsequent Usage"
 
-LKA: lka/scripts/lanedetect.py (Identifys Lanes) and lane_keep.py (Changes steering values)
+### Subsequent Usage
+
+1. Launch Airsim. A popup window may appear asking if a Car Simulation should be used. Click Yes.
+    > In the top left corner, a line will say "Loaded settings from ...". This file is equivalent to the settings.json file in this repository. 
+     Make sure that that file mentioned in AirSim is the same as the settings file in this repository.
+    >
+    > To run the simulation at a specific window simulation in windowed mode, the command line can be used.
+      In the terminal, navigate to the AirSim executable and invoke it wth the following flags:  -ResX=width -ResY=height -windowed
+    >
+    > For example: AirsimNH -ResX=640 -ResY=480 -windowed 
+
+2. Open up a ROS console, and navigate to the folder with the cloned repository.
+    > ***(Any time a new ROS node is added)*** Execute: catkin_make
+    >
+    > ***(Required everytime ROS console is opened)*** Execute: .\devel\setup.bat
+    >
+    > Execute: roslaunch central_control full_system.launch
+    > 
+    > There is a chance of getting this message in the ROS console: WARNING:tornado.general:Connect error on fd 1372: WSAECONNREFUSED.
+     To fix this, search the code for "airsim.CarClient(ip=host_ip)" and replace it with "airsim.CarClient()" .
