@@ -7,10 +7,15 @@ executables for MacOS and only some for Linux.
 
 1. Install ROS noetic for windows. Follow the instructions here: http://wiki.ros.org/noetic/Installation/Windows
 
+    > Visual Studio Community 2019 was used
+    > 
     > When following step 5, only step 5.1 is needed
+    > 
+    > When following step 6, only the command for the community edition of visual studio was used. Additionally, not setting the created shortcut with admin rights still worked, and shortcut can be created by right clicking the windows desktop (New -> shortcut)
+    > 
+    > Steps 6.1, 7, 8, 9 were not folowed, but worthwhile to keep in mid
 
-
-2. Download an airsim release. These can be found here: https://github.com/Microsoft/AirSim/releases
+2. Download an airsim release. These can be found here (scroll to a windows release section): https://github.com/Microsoft/AirSim/releases . Development was done for the neighbourhood release (AirSimNH) and to a lesser extent the coastal environment. The code cloned without modifications works by default for neighbourhood. 
 
    >Version 1.6 was used, but restrictions for using other versions are not known
    >
@@ -25,15 +30,15 @@ executables for MacOS and only some for Linux.
 
 1. Open up a ROS console, and navigate to the folder with the cloned repository.
    > Execute: catkin_make
-   > 
-   > Certain dependencies are needed. To get all of them, execute: pip install --no-deps -r dependencies.txt
+
+   > Certain dependencies are needed. To get all of them, execute: pip install --no-deps -r dependencies.txt . Before performing this command, pip may need to be updated (using "pip with python -m pip install --upgrade pip") followed by installing msgpack with "pip install msgpack-rpc-python"
    
     * Follow next step "Subsequent Usage"
 
 ### Subsequent Usage
 
 1. Launch Airsim. A popup window may appear asking if a Car Simulation should be used. Click Yes.
-    > In the top left corner, a line will say "Loaded settings from ...". This file is equivalent to the settings.json file in this repository. 
+    > In the top left corner, a line will say "Loaded settings from ...". (Note that for the first time Airsim is launched, this line may not appear. Relaunch Airsim in this case). This file is equivalent to the settings.json file in this repository. 
      Make sure that that file mentioned in AirSim is the same as the settings file in this repository.
     >
     > To run the simulation at a specific window simulation in windowed mode, the command line can be used.
@@ -50,3 +55,17 @@ executables for MacOS and only some for Linux.
     > 
     > There is a chance of getting this message in the ROS console: WARNING:tornado.general:Connect error on fd 1372: WSAECONNREFUSED.
      To fix this, search the code for "airsim.CarClient(ip=host_ip)" and replace it with "airsim.CarClient()" .
+     
+### Other Instructions
+
+1. Exit Ros run withg ctrl+c in ROS console. Do this before closing Airsim, which should be relaunched for every test run to start from a known situation in Airsim.
+
+2. To create a new test route, download a standard installation of Python for the desktop (ROS' installation of it does not come with Tkinter). In a command prompt, navigate to the cloned project directory, go to src/mapping_navigation/scripts and execute "python TestGUI.py" to launch the route making GUI. The command "pip install Pillow" may need to be done first.
+
+    > In the GUI, click "Create" followed by "straight road". Then click the new "RoadSegmentType.STRAIGHT" label to the right of the map. Then click "Create" follwed by "lane". Then click the new "[]" label under the previously selected RoadSegementType label. Then click "Create" then "path".  Now start clicking points on the map to add points. Repeat these steps for intersections and other paths that do not involve intersections.
+    > 
+    > Afterwards, click the first "empty path" label to the right of the map. Then click all of the created points on the map. 
+    > 
+    > Create an empty path file somewhere on the file system, ending with the ".pickle" file extension. Then click "File", "save map", and select the created pickle file.
+    > 
+    > Finally, go to the mapping_navigation/src/scripts/navigation.py file, go to the main function and set the map variable to the location of the created pickle file
