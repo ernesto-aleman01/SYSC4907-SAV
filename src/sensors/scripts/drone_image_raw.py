@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-# Example ROS node for publishing AirSim images.
+# This node is currently unused and is mostly equivalent to segmented_image.py.
+# There are no plans to use this file, but drone imaging may be explored in the future.
 
 # AirSim Python API
 import airsim
