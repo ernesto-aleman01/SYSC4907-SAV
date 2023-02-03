@@ -200,9 +200,9 @@ class MapModel:
         x_startpoint_nh = -1 * MapModel.AirSim_correction_factor[NH][X_COORD]
         x_startpoint_city = -1 * MapModel.AirSim_correction_factor[CITY][X_COORD]
 
-        if abs(x_startpoint_path - x_startpoint_nh) < 10:
+        if x_startpoint_path == x_startpoint_nh:
             map_choice = NH
-        elif abs(x_startpoint_path - x_startpoint_city) < 10:
+        elif x_startpoint_path == x_startpoint_city:
             map_choice = CITY
         else:
             map_choice = NH
