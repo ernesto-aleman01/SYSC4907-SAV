@@ -5,10 +5,10 @@ from std_msgs.msg import Float64MultiArray
 from cluster_detection import ClusterDetection
 
 # Size of the queue for object detection
-q_size = 10
+q_size = 15
+
 
 class LidarObjectDetect:
-
 
     def __init__(self):
         self.lidarPub = rospy.Publisher("lidar_data", Float64MultiArray, queue_size=q_size)
@@ -27,6 +27,7 @@ class LidarObjectDetect:
         float_array = Float64MultiArray()
         float_array.data = self.cluster_detection.find_bounding_boxes(data.points)
         self.lidarPub.publish(float_array)
+
 
 if __name__ == "__main__":
     # Do something
