@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
+import math
 import tkinter as tk
+from typing import List
+
 import networkx as nx
 import MapSerializer as MS
 from PIL import ImageTk, Image
 from Models import RoadSegmentType, MapModel, Lane, Point
-
+from sympy import Point as Point2, Segment
 
 CITY = 1
 NH = 2
 current_image = NH
+dest_node: Point = Point(None, None, RoadSegmentType.STRAIGHT)
 map_model: MapModel = MapModel()
 
 # Create a graph
@@ -17,39 +21,13 @@ C_G = nx.Graph()
 
 # Adding nodes (Point) and edges to the graph, representing the roads on the map
 NH_startpoint = Point(645, 573, RoadSegmentType.TURN)
-NH_point1 = Point(114, 573, RoadSegmentType.INTERSECTION)
-NH_point2 = Point(641, 252, RoadSegmentType.INTERSECTION)
-NH_point3 = Point(1171, 573, RoadSegmentType.INTERSECTION)
-NH_point4 = Point(91, 600, RoadSegmentType.STRAIGHT)
-NH_point5 = Point(91, 573, RoadSegmentType.INTERSECTION)
-NH_point6 = Point(91, 549, RoadSegmentType.STRAIGHT)
-NH_point7 = Point(91, 987, RoadSegmentType.STRAIGHT)
-NH_point8 = Point(91, 252, RoadSegmentType.STRAIGHT)
-NH_point9 = Point(91, 226, RoadSegmentType.INTERSECTION)
-NH_point10 = Point(91, 202, RoadSegmentType.STRAIGHT)
-NH_point11 = Point(91, 47, RoadSegmentType.INTERSECTION)
-NH_point12 = Point(91, 27, RoadSegmentType.INTERSECTION)
-NH_point13 = Point(111, 25, RoadSegmentType.INTERSECTION)
-NH_point14 = Point(616, 19, RoadSegmentType.STRAIGHT)
-NH_point15 = Point(642, 19, RoadSegmentType.INTERSECTION)
-NH_point16 = Point(671, 19, RoadSegmentType.STRAIGHT)
-NH_point17 = Point(1167,25, RoadSegmentType.INTERSECTION)
-NH_point18 = Point(1192, 27, RoadSegmentType.INTERSECTION)
-NH_point19 = Point(1194, 51, RoadSegmentType.INTERSECTION)
-NH_point20 = Point(1196, 548, RoadSegmentType.STRAIGHT)
-NH_point21 = Point(1196, 573, RoadSegmentType.INTERSECTION)
-NH_point22 = Point(1196, 598, RoadSegmentType.STRAIGHT)
-NH_point23 = Point(1196, 989, RoadSegmentType.STRAIGHT)
-NH_point24 = Point(645, 989, RoadSegmentType.STRAIGHT)
-NH_point25 = Point(118, 228, RoadSegmentType.INTERSECTION)
-NH_point26 = Point(614, 228, RoadSegmentType.STRAIGHT)
-NH_point27 = Point(641, 228, RoadSegmentType.INTERSECTION)
-NH_point28 = Point(641, 200, RoadSegmentType.STRAIGHT)
-NH_point29 = Point(641, 43, RoadSegmentType.INTERSECTION)
-NH_point30 = Point(575, 573, RoadSegmentType.STRAIGHT)
-NH_point31 = Point(644, 510, RoadSegmentType.STRAIGHT)
-NH_point32 = Point(705, 572, RoadSegmentType.STRAIGHT)
-NH_point33 = Point(645, 640, RoadSegmentType.STRAIGHT)
+NH_intersection_1 = Point(89, 573, RoadSegmentType.INTERSECTION)
+NH_intersection_2 = Point(89, 229, RoadSegmentType.INTERSECTION)
+NH_intersection_3 = Point(89, 22, RoadSegmentType.INTERSECTION)
+NH_intersection_4 = Point(645, 229, RoadSegmentType.INTERSECTION)
+NH_intersection_5 = Point(645, 22, RoadSegmentType.INTERSECTION)
+NH_intersection_6 = Point(1195, 573, RoadSegmentType.INTERSECTION)
+NH_intersection_7 = Point(1195, 22, RoadSegmentType.INTERSECTION)
 
 C_startpoint = Point(614, 589, RoadSegmentType.TURN)
 C_point1 = Point(632, 564, RoadSegmentType.STRAIGHT)
@@ -126,47 +104,25 @@ C_point71 = Point(269, 787, RoadSegmentType.STRAIGHT)
 C_point72 = Point(261, 821, RoadSegmentType.STRAIGHT)
 C_point73 = Point(255, 984, RoadSegmentType.STRAIGHT)
 
+def find_edge_weight(point1: Point, point2: Point) -> float:
+    return math.sqrt((point1.x - point2.x) ** 2 + (point1.y - point2.y) ** 2)
+
 NH_edges = [
-    (NH_startpoint, NH_point30, {"weight": 0.5}),
-    (NH_startpoint, NH_point31, {"weight": 0.5}),
-    (NH_startpoint, NH_point32, {"weight": 0.5}),
-    (NH_startpoint, NH_point33, {"weight": 0.5}),
-    (NH_point30, NH_point1, {"weight": 5.5}),
-    (NH_point31, NH_point2, {"weight": 3.5}),
-    (NH_point32, NH_point3, {"weight": 5.5}),
-    (NH_point33, NH_point24, {"weight": 4.5}),
-    (NH_point1, NH_point5, {"weight": 0.5}),
-    (NH_point5, NH_point4, {"weight": 0.5}),
-    (NH_point5, NH_point6, {"weight": 0.5}),
-    (NH_point4, NH_point7, {"weight": 5}),
-    (NH_point6, NH_point8, {"weight": 5}),
-    (NH_point8, NH_point9, {"weight": 0.5}),
-    (NH_point9, NH_point10, {"weight": 0.5}),
-    (NH_point10, NH_point11, {"weight": 2}),
-    (NH_point11, NH_point12, {"weight": 0.5}),
-    (NH_point12, NH_point13, {"weight": 0.5}),
-    (NH_point13, NH_point14, {"weight": 6}),
-    (NH_point14, NH_point15, {"weight": 0.5}),
-    (NH_point15, NH_point16, {"weight": 0.5}),
-    (NH_point16, NH_point17, {"weight": 6}),
-    (NH_point17, NH_point18, {"weight": 0.5}),
-    (NH_point18, NH_point19, {"weight": 0.5}),
-    (NH_point19, NH_point20, {"weight": 6}),
-    (NH_point20, NH_point21, {"weight": 0.5}),
-    (NH_point21, NH_point22, {"weight": 0.5}),
-    (NH_point22, NH_point23, {"weight": 5}),
-    (NH_point3, NH_point21, {"weight": 0.5}),
-    (NH_point9, NH_point25, {"weight": 0.5}),
-    (NH_point25, NH_point26, {"weight": 6}),
-    (NH_point26, NH_point27, {"weight": 0.5}),
-    (NH_point27, NH_point28, {"weight": 0.5}),
-    (NH_point27, NH_point2, {"weight": 0.5}),
-    (NH_point28, NH_point29, {"weight": 2}),
-    (NH_point29, NH_point15, {"weight": 0.5}),
+    (NH_startpoint, NH_intersection_1, {"weight": find_edge_weight(NH_startpoint, NH_intersection_1)}),
+    (NH_startpoint, NH_intersection_4, {"weight": find_edge_weight(NH_startpoint, NH_intersection_4)}),
+    (NH_startpoint, NH_intersection_6, {"weight": find_edge_weight(NH_startpoint, NH_intersection_6)}),
+    (NH_intersection_1, NH_intersection_2, {"weight": find_edge_weight(NH_intersection_1, NH_intersection_2)}),
+    (NH_intersection_2, NH_intersection_3, {"weight": find_edge_weight(NH_intersection_2, NH_intersection_3)}),
+    (NH_intersection_2, NH_intersection_4, {"weight": find_edge_weight(NH_intersection_2, NH_intersection_4)}),
+    (NH_intersection_3, NH_intersection_5, {"weight": find_edge_weight(NH_intersection_3, NH_intersection_5)}),
+    (NH_intersection_4, NH_intersection_2, {"weight": find_edge_weight(NH_intersection_4, NH_intersection_2)}),
+    (NH_intersection_4, NH_intersection_5, {"weight": find_edge_weight(NH_intersection_4, NH_intersection_5)}),
+    (NH_intersection_5, NH_intersection_7, {"weight": find_edge_weight(NH_intersection_5, NH_intersection_7)}),
+    (NH_intersection_6, NH_intersection_6, {"weight": find_edge_weight(NH_intersection_6, NH_intersection_6)})
 ]
 
 C_edges = [
-(C_startpoint, C_point1, {"weight": 1}),
+    (C_startpoint, C_point1, {"weight": 1}),
     (C_point1, C_point2, {"weight": 4}),
     (C_point2, C_point3, {"weight": 0.5}),
     (C_point3, C_point4, {"weight": 0.5}),
@@ -248,39 +204,13 @@ C_G.add_edges_from(C_edges)
 
 #used for iteration
 NH_pointList = [NH_startpoint,
-             NH_point1,
-             NH_point2,
-             NH_point3,
-             NH_point4,
-             NH_point5,
-             NH_point6,
-             NH_point7,
-             NH_point8,
-             NH_point9,
-             NH_point10,
-             NH_point11,
-             NH_point12,
-             NH_point13,
-             NH_point14,
-             NH_point15,
-             NH_point16,
-             NH_point17,
-             NH_point18,
-             NH_point19,
-             NH_point20,
-             NH_point21,
-             NH_point22,
-             NH_point23,
-             NH_point24,
-             NH_point25,
-             NH_point26,
-             NH_point27,
-             NH_point28,
-             NH_point29,
-             NH_point30,
-             NH_point31,
-             NH_point32,
-             NH_point33
+              NH_intersection_1,
+              NH_intersection_2,
+              NH_intersection_3,
+              NH_intersection_4,
+              NH_intersection_5,
+              NH_intersection_6,
+              NH_intersection_7
 ]
 
 C_pointList = [C_startpoint,
@@ -360,58 +290,116 @@ C_pointList = [C_startpoint,
 ]
 
 # Find the shortest path using dijkstra
-def find_shortest_path(graph, start_point_id, end_point_id):
-    return nx.dijkstra_path(graph, start_point_id, end_point_id)
+def find_shortest_path(graph: nx.Graph(), start_node: Point, end_node: Point) -> List:
+    return nx.dijkstra_path(graph, start_node, end_node)
+
+# Add destination node to graph
+def add_dest_node(graph: nx.Graph(), end_node: Point, node_list: List[Point]):
+    closest_edge = None
+    closest_distance = 100000
+    end_point = Point2(end_node.x, end_node.y)
+
+    for edge in graph.edges():
+        pos1 = Point2(edge[0].x, edge[0].y)
+        pos2 = Point2(edge[1].x, edge[1].y)
+        edge_line = Segment(pos1, pos2)
+        distance = edge_line.distance(end_point)
+        if distance < closest_distance:
+            closest_edge = edge
+            closest_distance = distance
+
+    graph.add_node(end_node)
+    if closest_distance < 20:
+        node1, node2 = closest_edge
+        graph.remove_edge(node1, node2)
+        graph.add_edge(node1, end_node, weight=find_edge_weight(node1, end_node))
+        graph.add_edge(node2, end_node, weight=find_edge_weight(node2, end_node))
+    else:
+        closest_node: Point = Point(10000, 10000, RoadSegmentType.STRAIGHT)
+        for node in node_list:
+            if find_edge_weight(end_node, node) < find_edge_weight(end_node, closest_node):
+                closest_node = node
+        graph.add_edge(end_node, closest_node, weight=find_edge_weight(end_node, closest_node))
+
+# optimize path by adding more points on straight roads and a curved path at intersections
+def optimize_path(path: List[Point]) -> List[Point]:
+    new_path = []
+    for i in range(len(path)-1):
+        start_point = path[i]
+        end_point = path[i+1]
+        interval = 25
+        distance = find_edge_weight(start_point, end_point)
+        num_points = int(distance / interval)
+
+        points = []
+        for j in range(num_points):
+            x = start_point.x + j * interval * (end_point.x - start_point.x) / distance
+            y = start_point.y + j * interval * (end_point.y - start_point.y) / distance
+            points.append(Point(x, y, RoadSegmentType.STRAIGHT))
+        points.append(end_point)
+        new_path.append(points)
+
+    print(new_path)
+    merged_list = []
+    for sublist in new_path:
+        merged_list.extend(sublist)
+
+    return merged_list
 
 # create path from clicking on canvas
 def handle_canvas_m1(event):
-    global map_model, current_image
+    global map_model, current_image, dest_node
     x, y = event.x, event.y
 
     #delete line and path if already created
     canvas.delete("line")
-    if not(map_model.empty()):
+    if not map_model.empty():
         map_model.delete_path(0)
 
-    #choosing node to travel too
-    point_found = False
-    endpoint = -1
-    if current_image == CITY:
-        for point in C_pointList:
-            if abs(x - point.x) < 10 and abs(y - point.y) < 10:
-                endpoint = point
-                point_found = True
-                break
-    else:
-        for point in NH_pointList:
-            if abs(x - point.x) < 10 and abs(y - point.y) < 10:
-                endpoint = point
-                point_found = True
-                break
+    #delete destination node from graph when creating new path
+    if not dest_node.x is None:
+        if current_image == NH and NH_G.has_node(dest_node):
+            neighbor_nodes = list(NH_G.neighbors(dest_node))
+            NH_G.remove_node(dest_node)
+            if len(neighbor_nodes) > 1:
+                node1, node2 = neighbor_nodes
+                NH_G.add_edge(node1, node2, weight=find_edge_weight(node1, node2))
+        elif current_image == CITY and C_G.has_node(dest_node):
+            neighbor_nodes = list(C_G.neighbors(dest_node))
+            C_G.remove_node(dest_node)
+            if len(neighbor_nodes) > 1:
+                node1, node2 = neighbor_nodes
+                C_G.add_edge(node1, node2, weight=find_edge_weight(node1, node2))
 
-    if point_found:
-        if current_image == CITY:
-            path = find_shortest_path(C_G, C_startpoint, endpoint)
-        else:
-            path = find_shortest_path(NH_G, NH_startpoint, endpoint)
-    else:
-        #if no node is clicked
-        return
+    #adding chosen node to graph
+    dest_node = Point(x, y, RoadSegmentType.STRAIGHT)
+    path: List[Point] = []
+    if current_image == NH:
+        add_dest_node(NH_G, dest_node, NH_pointList)
+        path = find_shortest_path(NH_G, NH_startpoint, dest_node)
+    elif current_image == CITY:
+        add_dest_node(C_G, dest_node, C_pointList)
+        path = find_shortest_path(C_G, C_startpoint, dest_node)
 
     #create line on canvas showing generated path
-    draw_line(path)
+    better_path = optimize_path(path)
+    draw_line(better_path)
+    print(path)
 
     #add path to map_model for navigation
     lane: Lane = Lane()
-    lane.set_lane(path)
+    lane.set_lane(better_path)
     map_model.add_path(lane)
 
 # draws path onto canvas
-def draw_line(path):
-    canvas.delete("line")
+def draw_line(path: List[Point]):
+    canvas.delete("line", "dot")
+    size = 3
     for i in range(len(path)):
         if i < len(path) - 1:
             canvas.create_line(path[i].x, path[i].y, path[i + 1].x, path[i + 1].y, fill="red", width=3, tags="line")
+        canvas.create_oval(path[i].x - size, path[i].y - size, path[i].x + size, path[i].y + size, fill='red',
+                           outline='yellow', tags="dot")
 
 # Handle load from file
 def handle_load():
@@ -479,8 +467,8 @@ window.title("Map creator")
 init_menu_bar()
 
 # Canvas
-img = [ImageTk.PhotoImage(Image.open('AirSim_graphs/City_Graph.png')),
-       ImageTk.PhotoImage(Image.open('AirSim_graphs/NH_Graph.png'))]
+img = [ImageTk.PhotoImage(Image.open('AirSim_maps/City_Top.png')),
+       ImageTk.PhotoImage(Image.open('AirSim_maps/NH_Top.png'))]
 h = img[0].height()
 w = img[0].width()
 
