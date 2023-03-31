@@ -81,7 +81,7 @@ ROADWARNINGSPEEDS = {RoadWarning.TURN_AHEAD: 2.5, RoadWarning.INTERSECTION_AHEAD
                      RoadWarning.STRAIGHT_ROAD_AHEAD: 5, RoadWarning.END_OF_PATH: 0}
 ROADSEGMENTSPEEDS = {RoadSegmentType.STRAIGHT: 5, RoadSegmentType.INTERSECTION: 2.5, RoadSegmentType.TURN: 2.5}
 
-INITIAL_COOLDOWN = 8
+INITIAL_COOLDOWN = 10
 INITIAL_SPEED = 0
 
 IMAGE_WIDTH = 640
@@ -167,7 +167,9 @@ class CentralControl:
         rospy.Subscriber("object_detection", DetectionResults, self.handle_object_recognition)
         rospy.Subscriber("sensor/speed", Float64, self.handle_speed)
         rospy.Subscriber("lidar_data", Float64MultiArray, self.handle_lidar_detection)
-        #rospy.Subscriber("new_lidar_data", Float64MultiArray, self.handle_lidar_detection)
+        # rospy.Subscriber("new_lidar_data", Float64MultiArray, self.handle_lidar_detection)
+        rospy.Subscriber("stop_sign_detection", DetectionResults, self.handle_stop_sign)
+
 
         # Midpoint of the image width
         MID_X = IMAGE_WIDTH / 2
@@ -193,6 +195,8 @@ class CentralControl:
                     # Heuristic values
                     if sign.depth < REACT_DEPTH:
                         self.stop_state = StopState.STOPPING
+                        self.car_controls.throttle = STOP_THROTTLE
+                        self.car_controls.brake = HOLD_BRAKE
                     elif sign.depth <= LOOKAHEAD_DEPTH:
                         self.cc_state.add(CCState.STREET_RULE)
                         self.stop_state = StopState.DETECTED
@@ -265,8 +269,7 @@ class CentralControl:
                 if self.stop_state == StopState.STOPPING:
                     self.car_controls.brake = HOLD_BRAKE
                     self.car_controls.throttle = STOP_THROTTLE
-
-                    if self.speed < STOPPED_SPEED:
+                    if self.speed == STOPPED_SPEED:
                         # When you are stopped, you can start the resuming process
                         self.stop_state = StopState.RESUMING
                 elif self.stop_state == StopState.RESUMING:
@@ -432,12 +435,23 @@ class CentralControl:
 
         detection_list: List[DetectionResult] = res.detection_results
         for detection in detection_list:
+            '''if detection.class_num == 11 and detection.depth < 40 and detection.confidence > 0.4:
+                # Stop sign. Depth is likely going to be smaller than 25 because of the image resolution
+                self.sign_data.append(detection)'''
+            if detection.class_num == 2 and detection.confidence > 0.4:
+                # Only deal with cars for now
+                self.object_data.append(detection)
+
+    def handle_stop_sign(self, res: DetectionResults):
+        if not self.ready:
+            self.ready = True
+        # Sort through and deal with sign detection
+        self.sign_data.clear()
+        detection_list: List[DetectionResult] = res.detection_results
+        for detection in detection_list:
             if detection.class_num == 11 and detection.depth < 40 and detection.confidence > 0.4:
                 # Stop sign. Depth is likely going to be smaller than 25 because of the image resolution
                 self.sign_data.append(detection)
-            elif detection.class_num == 2 and detection.confidence > 0.4:
-                # Only deal with cars for now
-                self.object_data.append(detection)
 
 
 if __name__ == "__main__":
