@@ -2,7 +2,7 @@
 
 ### Setting up the Environment
 
-Windows was used for development. Using WSL is possible, but it is harder to set up. At time of writing, AirSim does not have
+Windows was used for development. Using WSL is possible, but it is harder to set up. At the time of writing, AirSim does not have
 executables for MacOS and only some for Linux.
 
 1. Install ROS noetic for windows. Follow the instructions here: http://wiki.ros.org/noetic/Installation/Windows
@@ -15,9 +15,9 @@ executables for MacOS and only some for Linux.
     > 
     > Compatibility with Visual Studio 2022 was tested and the project was installed successfully. When using Visual Studio 2022, the path to the executable is slightly different. By default, it is installed under C:\Program Files\Microsoft Visual Studio\2022\Community\Common7\Tools\VsDevCmd.bat
     > 
-    > Steps 6.1, 7, 8, 9 were not followed, but worthwhile to keep in mind
+    > Steps 6.1, 7, 8, and 9 were not followed, but worthwhile to keep in mind
 
-2. Download an AirSim release. These can be found here (scroll to a Windows release section): https://github.com/Microsoft/AirSim/releases . Development was done for the neighbourhood release (AirSimNH) and to a lesser extent the coastal environment. The code cloned without modifications works by default for neighbourhood. 
+2. Download an AirSim release. These can be found here (scroll to a Windows release section): https://github.com/Microsoft/AirSim/releases. Development was done for the neighbourhood release (AirSimNH) and to a lesser extent the coastal environment. The code cloned without modifications works by default for the neighbourhood. 
 
    >Version 1.6 was used, but restrictions for using other versions are not known
    >
@@ -33,18 +33,18 @@ executables for MacOS and only some for Linux.
 1. Open up a ROS console, and navigate to the folder with the cloned repository.
    > Execute: catkin_make
 
-   > Certain dependencies are needed. To get all of them, execute: pip install --no-deps -r dependencies.txt . Before performing this command, pip may need to be updated (using "pip with python -m pip install --upgrade pip") followed by installing msgpack with "pip install msgpack-rpc-python"
+   > Certain dependencies are needed. To get all of them, execute: pip install --no-deps -r dependencies.txt. Before performing this command, pip may need to be updated (using "pip with python -m pip install --upgrade pip") followed by installing msgpack with "pip install msgpack-rpc-python"
    
-    * Follow next step "Subsequent Usage"
+    * Follow the next step "Subsequent Usage"
 
 ### Subsequent Usage
 
 1. Launch Airsim. A popup window may appear asking if a Car Simulation should be used. Click Yes.
     > In the top left corner, a line will say "Loaded settings from ...". (Note that for the first time Airsim is launched, this line may not appear. Relaunch Airsim in this case). This file is equivalent to the settings.json file in this repository. 
-     Make sure that that file mentioned in AirSim is the same as the settings file in this repository.
+     Ensure that the file mentioned in AirSim is the same as the settings file in this repository.
     >
     > To run the simulation at a specific window simulation in windowed mode, the command line can be used.
-      In the terminal, navigate to the AirSim executable and invoke it wth the following flags:  -ResX=width -ResY=height -windowed
+      In the terminal, navigate to the AirSim executable and invoke it with the following flags:  -ResX=width -ResY=height -windowed
     >
     > For example: AirsimNH -ResX=640 -ResY=480 -windowed 
 
@@ -62,7 +62,7 @@ executables for MacOS and only some for Linux.
 
 1. Exit Ros with ctrl+c in the ROS console. Do this before closing Airsim, which should be relaunched for every test run to start from a known situation in Airsim.
 
-2. To create a new test route, download a standard installation of Python for the desktop (ROS' installation of it does not come with Tkinter). In a command prompt, navigate to the cloned project directory, go to src/mapping_navigation/scripts and execute "python TestGUI.py" to launch the route making GUI. The command "pip install Pillow" and "pip install networkx" need to be done first.
+2. To create a new test route, download a standard installation of Python for the desktop (ROS's installation of it does not come with Tkinter). In a command prompt, navigate to the cloned project directory, go to src/mapping_navigation/scripts and execute "python TestGUI.py" to launch the route-making GUI. The command "pip install Pillow" and "pip install networkx" need to be done first.
 
     > In the GUI, simply click on any red node illustrated on the map and the shortest path will be generated.
     > 
