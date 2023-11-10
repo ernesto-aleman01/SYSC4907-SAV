@@ -17,11 +17,17 @@ jobs:
         id: changed-files
         uses: tj-actions/changed-files@v35
         with:
-          files: | 
-            testing/AirSimTests/log/CITY_auto_path_coords.log
-            testing/AirSimTests/log/NH_auto_path_coords.log
-      - name: Require new logs
-        if: steps.changed-files.outputs.all_modified_files_count != '2'
+          files: testing/AirSimTests/log/NH_auto_path_coords.log
+      - name: Require new NH log
+        if: steps.changed-files.outputs.any_changed == 'false'
+        run: exit 1
+        - name: Get changed files again
+        id: changed-files
+        uses: tj-actions/changed-files@v35
+        with:
+          files: testing/AirSimTests/log/CITY_auto_path_coords.log
+      - name: Require new CITY log
+        if: steps.changed-files.outputs.any_changed == 'false'
         run: exit 1
       - name: Set up Python 3.8
         uses: actions/setup-python@v4
