@@ -1,4 +1,4 @@
-name: AirSim Integration Tests
+name: Combined AirSim Integration Tests
 
 on:
   pull_request:
