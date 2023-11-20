@@ -409,17 +409,18 @@ def handle_canvas_m1(event):
 
     #delete destination node from graph when creating new path
     if not len(dest_nodes) == 0:
-        if current_image == NH and NH_G.has_node(dest_nodes[0]):
-            neighbor_nodes = list(NH_G.neighbors(dest_nodes[0]))
-            NH_G.remove_node(dest_nodes[0])
-            node1, node2 = neighbor_nodes
-            NH_G.add_edge(node1, node2, weight=find_edge_weight(node1, node2))
+        for node in dest_nodes:
+            if current_image == NH and NH_G.has_node(node):
+                neighbor_nodes = list(NH_G.neighbors(node))
+                NH_G.remove_node(node)
+                node1, node2 = neighbor_nodes
+                NH_G.add_edge(node1, node2, weight=find_edge_weight(node1, node2))
 
-        elif current_image == CITY and C_G.has_node(dest_nodes[0]):
-            neighbor_nodes = list(C_G.neighbors(dest_nodes[0]))
-            C_G.remove_node(dest_nodes[0])
-            node1, node2 = neighbor_nodes
-            C_G.add_edge(node1, node2, weight=find_edge_weight(node1, node2))
+            elif current_image == CITY and C_G.has_node(node):
+                neighbor_nodes = list(C_G.neighbors(node))
+                C_G.remove_node(node)
+                node1, node2 = neighbor_nodes
+                C_G.add_edge(node1, node2, weight=find_edge_weight(node1, node2))
 
     #adding chosen node to graph
     dest_nodes.clear()
@@ -464,11 +465,14 @@ def handle_canvas_m3(event):
         path = map_model.get_path()
         if not map_model.empty():
             map_model.delete_path(0)
-        #path = optimize_path(path)
     elif current_image == CITY:
         if not add_dest_node(C_G, dest_nodes[l]):
             return
-        path = find_shortest_path(C_G, dest_nodes[l-1], dest_nodes[l])
+        part_path = find_shortest_path(C_G, dest_nodes[l-1], dest_nodes[l])
+        new_lane: Lane = Lane()
+        new_lane.set_lane(part_path)
+        map_model.merge_path(new_lane)
+        path = map_model.get_path()
 
     #create line on canvas showing generated path
     draw_line(path)
