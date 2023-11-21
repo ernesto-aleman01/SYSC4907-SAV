@@ -18,6 +18,7 @@ CITY = 1
 NH = 2
 current_image = NH
 dest_node: Point = Point(None, None, RoadSegmentType.STRAIGHT)
+dest_nodes: List[Point] = []
 map_model: MapModel = MapModel()
 
 # Create a graph
@@ -381,7 +382,7 @@ def optimize_path(path: List[Point]) -> List[Point]:
         new_path.extend(straight_points)
 
         # create points along intersection
-        if len(path) > 2:
+        if len(path) > 2 and not len(straight_points) == 0:
             i0 = straight_points[-1]
             i1 = p1
             i2_x, i2_y = straight_point_formula(p1, p2, 1)
@@ -398,7 +399,7 @@ def optimize_path(path: List[Point]) -> List[Point]:
 
 # create path from clicking on canvas
 def handle_canvas_m1(event):
-    global map_model, current_image, dest_node
+    global map_model, current_image, dest_node, dest_nodes
     x, y = event.x, event.y
 
     #delete line and path if already created
@@ -407,31 +408,33 @@ def handle_canvas_m1(event):
         map_model.delete_path(0)
 
     #delete destination node from graph when creating new path
-    if not dest_node.x is None:
-        if current_image == NH and NH_G.has_node(dest_node):
-            neighbor_nodes = list(NH_G.neighbors(dest_node))
-            NH_G.remove_node(dest_node)
-            node1, node2 = neighbor_nodes
-            NH_G.add_edge(node1, node2, weight=find_edge_weight(node1, node2))
+    if not len(dest_nodes) == 0:
+        for node in dest_nodes:
+            if current_image == NH and NH_G.has_node(node):
+                neighbor_nodes = list(NH_G.neighbors(node))
+                NH_G.remove_node(node)
+                node1, node2 = neighbor_nodes
+                NH_G.add_edge(node1, node2, weight=find_edge_weight(node1, node2))
 
-        elif current_image == CITY and C_G.has_node(dest_node):
-            neighbor_nodes = list(C_G.neighbors(dest_node))
-            C_G.remove_node(dest_node)
-            node1, node2 = neighbor_nodes
-            C_G.add_edge(node1, node2, weight=find_edge_weight(node1, node2))
+            elif current_image == CITY and C_G.has_node(node):
+                neighbor_nodes = list(C_G.neighbors(node))
+                C_G.remove_node(node)
+                node1, node2 = neighbor_nodes
+                C_G.add_edge(node1, node2, weight=find_edge_weight(node1, node2))
 
     #adding chosen node to graph
-    dest_node = Point(x, y, RoadSegmentType.STRAIGHT)
+    dest_nodes.clear()
+    dest_nodes.append(Point(x, y, RoadSegmentType.STRAIGHT))
     path: List[Point] = []
     if current_image == NH:
-        if not add_dest_node(NH_G, dest_node):
+        if not add_dest_node(NH_G, dest_nodes[0]):
             return
-        path = find_shortest_path(NH_G, NH_startpoint, dest_node)
+        path = find_shortest_path(NH_G, NH_startpoint, dest_nodes[0])
         path = optimize_path(path)
     elif current_image == CITY:
-        if not add_dest_node(C_G, dest_node):
+        if not add_dest_node(C_G, dest_nodes[0]):
             return
-        path = find_shortest_path(C_G, C_startpoint, dest_node)
+        path = find_shortest_path(C_G, C_startpoint, dest_nodes[0])
 
     #create line on canvas showing generated path
     draw_line(path)
@@ -440,6 +443,45 @@ def handle_canvas_m1(event):
     lane: Lane = Lane()
     lane.set_lane(path)
     map_model.add_path(lane)
+
+# extend path from right clicking on canvas
+def handle_canvas_m3(event):
+    global map_model, current_image, dest_nodes
+    x, y = event.x, event.y
+    l = len(dest_nodes)
+    if l == 0:
+        return
+    #adding chosen node to graph
+    dest_nodes.append(Point(x, y, RoadSegmentType.STRAIGHT))
+    path: List[Point] = []
+    if current_image == NH:
+        if not add_dest_node(NH_G, dest_nodes[l]):
+            return
+        part_path = find_shortest_path(NH_G, dest_nodes[l-1], dest_nodes[l])
+        part_path = optimize_path(part_path)
+        new_lane: Lane = Lane()
+        new_lane.set_lane(part_path)
+        map_model.merge_path(new_lane)
+        path = map_model.get_path()
+        if not map_model.empty():
+            map_model.delete_path(0)
+    elif current_image == CITY:
+        if not add_dest_node(C_G, dest_nodes[l]):
+            return
+        part_path = find_shortest_path(C_G, dest_nodes[l-1], dest_nodes[l])
+        new_lane: Lane = Lane()
+        new_lane.set_lane(part_path)
+        map_model.merge_path(new_lane)
+        path = map_model.get_path()
+
+    #create line on canvas showing generated path
+    draw_line(path)
+    
+    #add path to map_model for navigation
+    lane: Lane = Lane()
+    lane.set_lane(path)
+    map_model.add_path(lane)
+
 
 # draws path onto canvas
 def draw_line(path: List[Point]):
@@ -514,7 +556,7 @@ def init_menu_bar():
 # Root window
 window = tk.Tk()
 window.title("Map creator")
-window.state("zoomed")
+window.state("iconic")
 init_menu_bar()
 
 # Canvas
@@ -528,6 +570,7 @@ canvas_container = canvas.create_image(0, 0, image=img[1], anchor='nw')
 canvas.pack(side="left", fill="both", expand=True)
 # Canvas event handlers
 canvas.bind("<Button-1>", handle_canvas_m1)
+canvas.bind("<Button-3>", handle_canvas_m3)
 window.bind_all('<KeyPress-p>', print_converted_path)
 
 window.mainloop()

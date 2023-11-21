@@ -93,6 +93,14 @@ class MapModel:
 
     def empty(self):
         return not self.paths
+    
+    def merge_path(self, new_path: Lane):
+        ignore_first_point = True
+        for point in new_path.points:
+            if not ignore_first_point:
+                self.paths[0].add_point(point)
+            ignore_first_point = False
+        
 
     # Use NH/City map correction factors.
     def convert_point(self, point: Point, map_choice: int) -> Tuple[float, float]:
