@@ -28,6 +28,7 @@ class FastCamera:
         rospy.init_node("fast_camera", anonymous=True)
         rate = rospy.Rate(10)  # 10hz
         while not rospy.is_shutdown():
+            depth_img = self.bridge.get_image(0, 1, pixels_as_float=True)
             scene_img = self.bridge.get_image(0, SCENE_IMAGE)
             scene_img_rgb_string = scene_img.image_data_uint8
             msg = Image()
@@ -42,10 +43,10 @@ class FastCamera:
 
             self.publisher.publish(msg)
 
-            #img1d = np.frombuffer(scene_img.image_data_uint8, dtype=np.uint8)
-            #img3d = img1d.reshape(scene_img.height, scene_img.width, 3)
-            #cv2.imshow("FAST_CAM", img3d)
-            #cv2.waitKey(1)
+            img1d = np.frombuffer(scene_img.image_data_uint8, dtype=np.uint8)
+            img3d = img1d.reshape(scene_img.height, scene_img.width, 3)
+            cv2.imshow("FAST_CAM", img3d)
+            cv2.waitKey(1)
             rate.sleep()
 
 

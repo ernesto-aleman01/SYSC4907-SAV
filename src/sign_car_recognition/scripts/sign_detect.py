@@ -112,7 +112,7 @@ class SignDetector:
             dr.confidence = elem[CONFIDENCE]
             dr.class_num = elem[CLASS_NUM]
             dr.name = elem[NAME]
-            dr.depth = 0
+            dr.depth = self.calculate_distance(elem)
             detect_results.append(dr)
 
         return detect_results
@@ -125,6 +125,9 @@ class SignDetector:
         pd_res = results.pandas()
         rospy.loginfo(pd_res.xyxy[0])
 
+    def calculate_distance(self, element):
+        area = (abs(element[XMAX]-element[XMIN])*abs(element[XMAX]-element[XMIN]))
+        return area
 
 # Give the option to run separately
 if __name__ == "__main__":

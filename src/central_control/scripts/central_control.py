@@ -235,7 +235,7 @@ class CentralControl:
                         rospy.loginfo(f'Mark as avoid: {obj}')
 
                     # Add bounding boxes for debug image
-                    # Colours are (B, G, R)
+                    # Colours are (B, G, R)pu
                     color = RED if is_danger else GREEN
                     x1, x2, y1, y2 = math.floor(obj.xmin), math.floor(obj.xmax), math.floor(obj.ymin), math.floor(
                         obj.ymax)
@@ -291,17 +291,16 @@ class CentralControl:
                 self.bridge.set_controls(self.car_controls)
 
                 # Mark danger zones
-                cv.line(scene, (0, round(l_int)), (round(-l_int / l_slope), 0), RED, LINE_THICKNESS)  # Left
-                cv.line(scene, (639, round(639 * r_slope + r_int)), (round(-r_int / r_slope), 0), RED,
-                        LINE_THICKNESS)  # Right
+                ##cv.line(scene, (639, round(639 * r_slope + r_int)), (round(-r_int / r_slope), 0), RED,
+                        #LINE_THICKNESS)  # Right
                 # Write debug image every two images
                 if self.tick % 2 == 0:
                     """
                     DON'T LEAVE THIS RUNNING FOR LONG PERIODS OF TIME OR YOU WILL FILL YOUR HARD DRIVE
                     """
                     # cv.imwrite(f'/home/mango/test_imgs/n_{rospy.Time.now()}_s.png', scene)
-                    cv.imshow("object_avoid_scene", scene)
-                    cv.waitKey(1)
+                cv.imshow("object_avoid_scene", scene)
+                cv.waitKey(1)
 
             rate.sleep()
             self.tick += 1
@@ -433,10 +432,10 @@ class CentralControl:
 
         detection_list: List[DetectionResult] = res.detection_results
         for detection in detection_list:
-            '''if detection.class_num == 11 and detection.depth < 40 and detection.confidence > 0.4:
+            if detection.class_num == 11 and detection.depth < 40 and detection.confidence > 0.4:
                 # Stop sign. Depth is likely going to be smaller than 25 because of the image resolution
-                self.sign_data.append(detection)'''
-            if detection.class_num == 2 and detection.confidence > 0.4:
+                self.sign_data.append(detection)
+            if detection.class_num == 2 and detection.confidence > 0.6:
                 # Only deal with cars for now
                 self.object_data.append(detection)
 
