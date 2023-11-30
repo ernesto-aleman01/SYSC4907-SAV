@@ -24,5 +24,6 @@
   <node name="car_image_raw" pkg="sensors" type="car_image_raw.py" />
   <node name="car_pose" pkg="sensors" type="car_pose.py" />
   <node name="segmented_image" pkg="sensors" type="segmented_image.py" />
+  <node name="fast_camera" pkg="sensors" type="fast_camera.py" />
   <node name="logging" pkg="sensors" type="vehicle_logging.py" if="$(arg log)" /> <!-- Launch logging node if flag is set -->
 </launch>

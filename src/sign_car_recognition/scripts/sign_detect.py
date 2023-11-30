@@ -41,14 +41,14 @@ class SignDetector:
 
     def listen(self):
         # This is existing topic from prev years
-        rospy.Subscriber('airsim/scene_depth', SceneDepth, self.handle_image)
+        rospy.Subscriber('fast_cam', Image, self.handle_image)
         rospy.spin()
 
     # Do detection on an image and publish the detections array
-    def handle_image(self, combine: SceneDepth):
-        img1d = np.frombuffer(combine.scene.data, dtype=np.uint8)
+    def handle_image(self, img: Image):
+        img1d = np.frombuffer(img.data, dtype=np.uint8)
         # reshape array to 3 channel image array
-        img_rgb = img1d.reshape(combine.scene.height, combine.scene.width, 3)
+        img_rgb = img1d.reshape(img.height, img.width, 3)
 
         # f = open(f'/home/mango/test_imgs/n_{rospy.Time.now()}.txt', 'wb')
         # f.write(img.data)
@@ -58,10 +58,6 @@ class SignDetector:
         # Run object detection on scene data
         res: List[DetectionResult] = self.detect_objects(img_rgb)
 
-        # Match with scene depth
-        depth = np.array(combine.depth_data, dtype=np.float32)
-        depth = depth.reshape(combine.scene.height, combine.scene.width)
-        depth = np.array(depth * (DEPTH_RES - 1), dtype=np.uint8)
 
         # Find median depth value for each detection box
         for detect in res:
@@ -71,19 +67,9 @@ class SignDetector:
             x1_s, x2_s = math.floor(x1 + DIFF_WEIGHT * xdif), math.floor(x2 - DIFF_WEIGHT * xdif)
             y1_s, y2_s = math.floor(y1 + DIFF_WEIGHT * ydif), math.floor(y2 - DIFF_WEIGHT * ydif)
 
-            sub = depth[y1_s:y2_s, x1_s:x2_s]
-            med = np.median(sub)
-
-            if math.isnan(med):
-                rospy.loginfo(sub)
-                rospy.loginfo(sub.shape)
-
-            # Range of values is 0 to 100 m
-            detect.depth = med / DEPTH_RES * MAX_DEPTH
-
             # Draw bounding boxes
             cv2.rectangle(img_rgb, (x1, y1), (x2, y2), GREEN, 2)
-            cv2.putText(img_rgb, f'{detect.name}: {detect.depth}', (x2 + PADDING, y2), NORMAL_FONT, 0.3, GREEN)
+            cv2.putText(img_rgb, f'{detect.name}', (x2 + PADDING, y2), NORMAL_FONT, 0.3, GREEN)
 
         # Write debug images to visualize the detections.
         # DONT LEAVE THIS ON FOR LONG PERIODS OF TIME OR YOU WILL FILL YOUR HARD DRIVE WITH PNGS
@@ -111,6 +97,7 @@ class SignDetector:
             3: 'motorcycle',
             7: 'truck',
             9: 'traffic light',
+            11: 'stop_sign'
         }
         for elem in res_list:
             # Skip adding the result if not a relevant class
@@ -125,6 +112,7 @@ class SignDetector:
             dr.confidence = elem[CONFIDENCE]
             dr.class_num = elem[CLASS_NUM]
             dr.name = elem[NAME]
+            dr.depth = self.calculate_distance(elem)
             detect_results.append(dr)
 
         return detect_results
@@ -137,6 +125,9 @@ class SignDetector:
         pd_res = results.pandas()
         rospy.loginfo(pd_res.xyxy[0])
 
+    def calculate_distance(self, element):
+        area = (abs(element[XMAX]-element[XMIN])*abs(element[XMAX]-element[XMIN]))
+        return area
 
 # Give the option to run separately
 if __name__ == "__main__":
