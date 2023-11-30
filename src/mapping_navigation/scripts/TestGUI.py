@@ -401,7 +401,8 @@ def optimize_path(path: List[Point]) -> List[Point]:
 def handle_canvas_m1(event):
     global map_model, current_image, dest_node, dest_nodes
     x, y = event.x, event.y
-
+    print(x)
+    print(y)
     #delete line and path if already created
     canvas.delete("line", "dot")
     if not map_model.empty():
