@@ -69,8 +69,9 @@ class SignDetector:
 
             # Draw bounding boxes
             cv2.rectangle(img_rgb, (x1, y1), (x2, y2), GREEN, 2)
-            cv2.putText(img_rgb, f'{detect.name}: {detect.depth}', (x2 + PADDING, y2), NORMAL_FONT, 0.3, GREEN)
-
+            #cv2.putText(img_rgb, f'{detect.name}:', (x2 + PADDING, y2), NORMAL_FONT, 0.3, GREEN)
+            cv2.putText(img_rgb, f'{detect.confidence}:', (10 + PADDING, y2+10), NORMAL_FONT, 0.3, GREEN)
+            cv2.putText(img_rgb, f'{detect.depth}:', (10 + PADDING, y2 + 20), NORMAL_FONT, 0.3, GREEN)
         # Write debug images to visualize the detections.
         # DONT LEAVE THIS ON FOR LONG PERIODS OF TIME OR YOU WILL FILL YOUR HARD DRIVE WITH PNGS
         # cv2.imwrite(f'/home/mango/test_imgs/n_{rospy.Time.now()}_d.png', depth)

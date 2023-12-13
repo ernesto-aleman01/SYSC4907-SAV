@@ -189,14 +189,13 @@ class CentralControl:
             # Iterate through the stored objects and signs (only stop signs for now)
             # to see if there are actions worth taking
             if self.stop_state != StopState.RESUMING:
-                cv.putText(scene, 'Initial TEST', (100, 100), FONT, FONT_SCALE, YELLOW)
                 for sign in self.sign_data:
                     # Heuristic values
                     if sign.depth < REACT_DEPTH:
                         self.stop_state = StopState.STOPPING
                         self.car_controls.throttle = STOP_THROTTLE
                         self.car_controls.brake = HOLD_BRAKE
-                        cv.putText(scene, 'Initial Stop', (100, 100), FONT, FONT_SCALE, YELLOW)
+                        self.cc_state.add(CCState.STREET_RULE)
                     elif sign.depth <= LOOKAHEAD_DEPTH:
                         self.cc_state.add(CCState.STREET_RULE)
                         self.stop_state = StopState.DETECTED
@@ -265,19 +264,16 @@ class CentralControl:
                     self.car_controls.steering = RIGHT_TURN_ANGLE
                     cv.putText(scene, 'Go Right', (cx, cy), FONT, FONT_SCALE, YELLOW)
             elif CCState.STREET_RULE in self.cc_state:
-                cv.putText(scene, 'got here??????????????????', (100, 100), FONT, FONT_SCALE, YELLOW)
                 # Actions taken when in Street Rule mode
                 if self.stop_state == StopState.STOPPING:
                     self.car_controls.brake = HOLD_BRAKE
                     self.car_controls.throttle = STOP_THROTTLE
-                    cv.putText(scene, 'stopped', (100, 100), FONT, FONT_SCALE, YELLOW)
                     if self.speed <= STOPPED_SPEED:
                         # When you are stopped, you can start the resuming process
                         self.stop_state = StopState.RESUMING
                 elif self.stop_state == StopState.RESUMING:
                     # Stop breaking
                     self.car_controls.brake = RELEASE_BRAKE
-                    cv.putText(scene, 'resuming', (100, 100), FONT, FONT_SCALE, YELLOW)
 
                     # Count down cooldown period
                     if not self.sign_data:
@@ -447,7 +443,7 @@ class CentralControl:
         self.sign_data.clear()
         detection_list: List[DetectionResult] = res.detection_results
         for detection in detection_list:
-            if detection.class_num == 11 and detection.depth < 40 and detection.confidence > 0.4:
+            if detection.class_num == 11 and detection.confidence > 0.5:
                 # Stop sign. Depth is likely going to be smaller than 25 because of the image resolution
                 self.sign_data.append(detection)
 
