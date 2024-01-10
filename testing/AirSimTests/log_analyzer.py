@@ -102,16 +102,36 @@ class LogAnalyzer:
         target_time = self.path_len / TARGET_TIME_FRAC
         self.metrics.append(f'Log runtime was {delta} seconds. Target value is {target_time:.2f}')
 
+    def analyze_brake_points(self,brake_points: List[LogEntry]):
+        for entry in brake_points:
+            x, y = entry.pos
+            if 114 < x < 118 and -1 < y < 1:
+                ss_id = 1
+                self.metrics.append(f'Stopped at Stop Sign {ss_id} at time {entry.time}')
+            elif 79 < x < 80 and -22 < y < -13:
+                ss_id = 2
+                self.metrics.append(f'Stopped at Stop Sign {ss_id} at time {entry.time}')
+            elif -1 < x < 0 and -15 < y < -11:
+                ss_id = 3
+                self.metrics.append(f'Stopped at Stop Sign {ss_id} at time {entry.time}')
+            else:
+                ss_id = 0
+                self.metrics.append(f'Stopped at Stop Sign {ss_id} at time {entry.time}')
+
+
     def analyze(self):
         last_point: Tuple[float, float] = self.log[0].pos
         start_time: Optional[datetime] = None
         end_time: Optional[datetime] = None
         area = 0.0
         lidar_detections = 0
+        brake_points: List[LogEntry] =  []
         for entry in self.log:
             if start_time is None and (entry.pos[X_COORD] - last_point[X_COORD] < 1
                                        or entry.pos[Y_COORD] - last_point[Y_COORD] < 1):
                 start_time = datetime.strptime(entry.time, "%Y-%m-%d %H:%M:%S")
+            if entry.brake == 1.0:
+                brake_points.append(entry)
 
             point_tuple = entry.pos
             self.path_img.draw_actual_segment(
