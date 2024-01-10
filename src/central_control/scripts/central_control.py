@@ -195,6 +195,7 @@ class CentralControl:
                         self.stop_state = StopState.STOPPING
                         self.car_controls.throttle = STOP_THROTTLE
                         self.car_controls.brake = HOLD_BRAKE
+                        self.cc_state.add(CCState.STREET_RULE)
                     elif sign.depth <= LOOKAHEAD_DEPTH:
                         self.cc_state.add(CCState.STREET_RULE)
                         self.stop_state = StopState.DETECTED
@@ -267,7 +268,7 @@ class CentralControl:
                 if self.stop_state == StopState.STOPPING:
                     self.car_controls.brake = HOLD_BRAKE
                     self.car_controls.throttle = STOP_THROTTLE
-                    if self.speed == STOPPED_SPEED:
+                    if self.speed <= STOPPED_SPEED:
                         # When you are stopped, you can start the resuming process
                         self.stop_state = StopState.RESUMING
                 elif self.stop_state == StopState.RESUMING:
@@ -427,14 +428,10 @@ class CentralControl:
             self.ready = True
 
         # Sort through and deal with detections
-        self.sign_data.clear()
         self.object_data.clear()
 
         detection_list: List[DetectionResult] = res.detection_results
         for detection in detection_list:
-            if detection.class_num == 11 and detection.depth < 40 and detection.confidence > 0.4:
-                # Stop sign. Depth is likely going to be smaller than 25 because of the image resolution
-                self.sign_data.append(detection)
             if detection.class_num == 2 and detection.confidence > 0.6:
                 # Only deal with cars for now
                 self.object_data.append(detection)
@@ -446,7 +443,7 @@ class CentralControl:
         self.sign_data.clear()
         detection_list: List[DetectionResult] = res.detection_results
         for detection in detection_list:
-            if detection.class_num == 11 and detection.depth < 40 and detection.confidence > 0.4:
+            if detection.class_num == 11 and detection.confidence > 0.5:
                 # Stop sign. Depth is likely going to be smaller than 25 because of the image resolution
                 self.sign_data.append(detection)
 
