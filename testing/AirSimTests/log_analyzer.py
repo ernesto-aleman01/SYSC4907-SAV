@@ -166,6 +166,7 @@ class LogAnalyzer:
         target_area = sum([s.length for s in self.segments]) * TARGET_AREA_FRAC
         self.metrics.append(f'Area between target and actual path is {area:.2f}. Target value is {target_area:.2f}')
         self.metrics.append(f'Total objects detected by lidar: {lidar_detections}')
+        self.analyze_brake_points(brake_points)
         self.analyze_speed(start_time, end_time)
         self.path_img.save(f'{self.test_case}.png')
 
