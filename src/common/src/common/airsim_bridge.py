@@ -31,7 +31,10 @@ class AirSimBridge(Bridge):
 
     def get_throttle(self):
         return self.client.getCarControls().throttle
-
+        
+    def get_brake(self):
+        return self.client.getCarControls().brake
+        
     def get_position(self):
         position = self.client.simGetGroundTruthKinematics("").position
         return Vector(position.x_val, position.y_val, position.z_val)

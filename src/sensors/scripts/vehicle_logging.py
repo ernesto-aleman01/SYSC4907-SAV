@@ -29,7 +29,9 @@ class Logging:
             steering = self.client.get_steering()
             throttle = self.client.get_throttle()
             has_collided = self.client.has_collided()
-            self.log.append(LogEntry(time, pos, steering, throttle, has_collided, self.current_detections))
+            speed = self.client.get_speed()
+            brake = self.client.get_brake()
+            self.log.append(LogEntry(time, pos, steering, throttle, brake, speed, has_collided, self.current_detections))
             self.rate.sleep()
 
     def write_log(self):

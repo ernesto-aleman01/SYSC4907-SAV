@@ -59,7 +59,8 @@ class Bridge(ABC):
 
     def get_throttle(self) -> float:
         pass
-
+    def get_brake(self) -> float:
+        pass
     def get_position(self) -> Vector:
         pass
 
