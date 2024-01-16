@@ -23,8 +23,11 @@ class AirSimBridge(Bridge):
         airsim.write_png(filepath, img)
 
     def set_controls(self, controls: CarControls):
-        airsim_controls = airsim.CarControls(controls.throttle, controls.steering, controls.brake)
+        airsim_controls = airsim.CarControls(controls.throttle, controls.steering, controls.brake, controls.handbrake, controls.is_manual_gear, controls.manual_gear, controls.gear_immediate)
         self.client.setCarControls(airsim_controls)
+
+    def go_backwards(self,controls: CarControls):
+        controls.set_throttle(controls.throttle, False)
 
     def get_steering(self):
         return self.client.getCarControls().steering

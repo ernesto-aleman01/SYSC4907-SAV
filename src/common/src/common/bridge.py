@@ -10,11 +10,14 @@ SEGMENTATION_IMAGE = 5
 
 
 class CarControls:
-    def __init__(self, throttle=0.0, steering=0.0, brake=0.0):
+    def __init__(self, throttle=0.0, steering=0.0, brake=0.0, handbrake=False, is_manual_gear=False, manual_gear=1, gear_immediate=True):
         self.throttle = throttle
         self.steering = steering
         self.brake = brake
-
+        self.handbrake = handbrake
+        self.is_manual_gear = is_manual_gear
+        self.manual_gear = manual_gear
+        self.gear_immediate = gear_immediate
 
 class Image:
     image_data_uint8 = np.uint8(0)

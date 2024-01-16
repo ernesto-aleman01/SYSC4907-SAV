@@ -3,6 +3,7 @@
 import rospy
 import numpy as np
 import cv2 as cv
+import time
 
 from sign_car_recognition.msg import DetectionResult, DetectionResults
 from std_msgs.msg import Float64, Float64MultiArray
@@ -247,6 +248,7 @@ class CentralControl:
             if not self.avoid:
                 self.cc_state.discard(CCState.OBJECT_AVOID)
 
+
             if CCState.OBJECT_AVOID in self.cc_state:
                 # Actions taken when in Object Avoidance mode
                 # Sort for closest object
@@ -286,8 +288,14 @@ class CentralControl:
                         # Done the stop sign process
                         self.stop_state = StopState.NONE
                         self.cc_state.discard(CCState.STREET_RULE)
-
-            # Set controls
+            if self.bridge.has_collided():
+            #if self.speed > STOPPED_SPEED and self.car_controls.brake != HOLD_BRAKE:
+                self.car_controls.is_manual_gear = True
+                self.car_controls.manual_gear = -1
+                time.sleep(2)
+            else:
+                self.car_controls.is_manual_gear = False
+                self.car_controls.manual_gear = 1
             if self.ready:
                 self.bridge.set_controls(self.car_controls)
 
@@ -433,6 +441,9 @@ class CentralControl:
         detection_list: List[DetectionResult] = res.detection_results
         for detection in detection_list:
             if detection.class_num == 2 and detection.confidence > 0.6:
+                # Only deal with cars for now
+                self.object_data.append(detection)
+            if detection.class_num == 0 and detection.confidence > 0.6:
                 # Only deal with cars for now
                 self.object_data.append(detection)
 
