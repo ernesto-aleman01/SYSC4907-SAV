@@ -56,11 +56,11 @@ class SignDetector:
         # cv2.imwrite(f'/home/mango/test_imgs/n_{rospy.Time.now()}.png', img_rgb)
 
         # Run object detection on scene data
-        res_tuple: tuple[List[DetectionResult], List[DetectionResult]] = self.detect_objects(img_rgb)
-        ss_results, tl_results = res_tuple
+        res: List[DetectionResult] = self.detect_objects(img_rgb)
+
 
         # Find median depth value for each detection box
-        for detect in ss_results:
+        for detect in res:
             x1, x2 = math.floor(detect.xmin), math.floor(detect.xmax)
             y1, y2 = math.floor(detect.ymin), math.floor(detect.ymax)
             xdif, ydif = x2 - x1, y2 - y1
@@ -72,19 +72,6 @@ class SignDetector:
             #cv2.putText(img_rgb, f'{detect.name}:', (x2 + PADDING, y2), NORMAL_FONT, 0.3, GREEN)
             cv2.putText(img_rgb, f'{detect.confidence}:', (10 + PADDING, y2+10), NORMAL_FONT, 0.3, GREEN)
             cv2.putText(img_rgb, f'{detect.depth}:', (10 + PADDING, y2 + 20), NORMAL_FONT, 0.3, GREEN)
-
-        for detect in tl_results:
-            x1, x2 = math.floor(detect.xmin), math.floor(detect.xmax)
-            y1, y2 = math.floor(detect.ymin), math.floor(detect.ymax)
-            xdif, ydif = x2 - x1, y2 - y1
-            x1_s, x2_s = math.floor(x1 + DIFF_WEIGHT * xdif), math.floor(x2 - DIFF_WEIGHT * xdif)
-            y1_s, y2_s = math.floor(y1 + DIFF_WEIGHT * ydif), math.floor(y2 - DIFF_WEIGHT * ydif)
-
-            # Draw bounding boxes
-            cv2.rectangle(img_rgb, (x1, y1), (x2, y2), GREEN, 2)
-            #cv2.putText(img_rgb, f'{detect.name}:', (x2 + PADDING, y2), NORMAL_FONT, 0.3, GREEN)
-            cv2.putText(img_rgb, f'{detect.confidence}:', (10 + PADDING, y2+10), NORMAL_FONT, 0.3, GREEN)
-            cv2.putText(img_rgb, f'{detect.name}:', (10 + PADDING, y2 + 20), NORMAL_FONT, 0.3, GREEN)
         # Write debug images to visualize the detections.
         # DONT LEAVE THIS ON FOR LONG PERIODS OF TIME OR YOU WILL FILL YOUR HARD DRIVE WITH PNGS
         # cv2.imwrite(f'/home/mango/test_imgs/n_{rospy.Time.now()}_d.png', depth)
@@ -92,8 +79,8 @@ class SignDetector:
         cv2.imshow("stop_sign_detections", img_rgb)
         cv2.waitKey(1)
 
-        rospy.loginfo(ss_results)
-        self.pub.publish(ss_results)
+        rospy.loginfo(res)
+        self.pub.publish(res)
 
     # Detect objects given an image (np array)
     def detect_objects(self, img):
@@ -103,47 +90,29 @@ class SignDetector:
         res_list: List[Tuple[float, float, float, float, float, int, str]]
         res_list = results.pandas().xyxy[0].to_numpy().tolist()
 
-        ss_results = []
-        tl_results = []
+        detect_results = []
         # important detection classes we care about
         imp_classes = {
-            11: 'stop_sign'
-
-        }
-
-        imp2_classes = {
+            11: 'stop_sign',
             9: 'traffic_light'
         }
-
         for elem in res_list:
             # Skip adding the result if not a relevant class
-            if elem[CLASS_NUM] in imp_classes:
+            if elem[CLASS_NUM] not in imp_classes:
+                continue
 
-                dr = DetectionResult()
-                dr.xmin = elem[XMIN]
-                dr.ymin = elem[YMIN]
-                dr.xmax = elem[XMAX]
-                dr.ymax = elem[YMAX]
-                dr.confidence = elem[CONFIDENCE]
-                dr.class_num = elem[CLASS_NUM]
-                dr.name = elem[NAME]
-                dr.depth = 5
-                ss_results.append(dr)
+            dr = DetectionResult()
+            dr.xmin = elem[XMIN]
+            dr.ymin = elem[YMIN]
+            dr.xmax = elem[XMAX]
+            dr.ymax = elem[YMAX]
+            dr.confidence = elem[CONFIDENCE]
+            dr.class_num = elem[CLASS_NUM]
+            dr.name = elem[NAME]
+            dr.depth = 5
+            detect_results.append(dr)
 
-            elif elem[CLASS_NUM] == 9:
-                tl = DetectionResult()
-                tl.xmin = elem[XMIN]
-                tl.ymin = elem[YMIN]
-                tl.xmax = elem[XMAX]
-                tl.ymax = elem[YMAX]
-                tl.confidence = elem[CONFIDENCE]
-                tl.class_num = elem[CLASS_NUM]
-                tl.name = elem[NAME]
-                tl.depth = 5
-                tl_results.append(tl)
-
-
-        return ss_results, tl_results
+        return detect_results
 
     # For testing purposes when you don't want to run the whole ROS thing
     def test_detect(self, file_path):

@@ -221,8 +221,8 @@ def lane_detect(cv_img: np.ndarray, segmented_image: np.ndarray) -> Tuple[List, 
     masked_hls = mask_image(hls_threshold)
 
     # Only look at objects that are on the ground for gradient and hls
-    #masked_gradient = cv.bitwise_and(masked_gradient, segmented_road)
-    #masked_hls = cv.bitwise_and(masked_hls, segmented_road)
+    masked_gradient = cv.bitwise_and(masked_gradient, segmented_road)
+    masked_hls = cv.bitwise_and(masked_hls, segmented_road)
 
     # Perform the hough transform on each detection
     hough_gradient = hough_line_detection(masked_gradient)
