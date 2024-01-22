@@ -12,9 +12,11 @@ from std_msgs.msg import String
 from typing import List, Tuple
 import math
 
+
 DEPTH_RES = 256
 MAX_DEPTH = 100
 DIFF_WEIGHT = 0.20
+
 
 # Bounding box parameters
 GREEN = (0, 255, 0)
@@ -37,6 +39,7 @@ class SignDetector:
         self.model.eval()
         # New topic
         self.pub = rospy.Publisher('stop_sign_detection', DetectionResults, queue_size=1)
+        self.pub2 = rospy.Publisher('traffic_light_detection', DetectionResults, queue_size=1)
         rospy.init_node('stop_sign_detector', anonymous=True)
 
     def listen(self):
@@ -93,6 +96,7 @@ class SignDetector:
         cv2.waitKey(1)
 
         rospy.loginfo(ss_results)
+        self.pub2.publish(tl_results)
         self.pub.publish(ss_results)
 
     # Detect objects given an image (np array)
