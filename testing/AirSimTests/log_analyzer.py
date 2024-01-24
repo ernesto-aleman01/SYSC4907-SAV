@@ -83,7 +83,7 @@ class LogAnalyzer:
     def analyze_steering(self, entry: LogEntry):
         if abs(entry.steering) > MAX_STEERING:
             self.warning_marks += 1
-            self.warnings.append(f'Steering exceeded target value (incident {self.warning_marks})')
+            #self.warnings.append(f'Steering exceeded target value (incident {self.warning_marks})')
             self.incident_positions.append(entry.pos)
 
     def analyze_point(self, current_point: Tuple[float, float], last_point: Tuple[float, float]):
@@ -108,8 +108,8 @@ class LogAnalyzer:
     def analyze_brake_points(self,brake_points: List[LogEntry]):
         count = 0
         for entry in brake_points:
-            count +=1
-            self.path_img.draw_stop_point(entry.pos)
+            count += 1
+            self.path_img.draw_stop_point(entry.pos,self.env_id, count)
             x, y = entry.pos
             if 114 < x < 118 and -1 < y < 1:
                 ss_id = 1
@@ -132,6 +132,7 @@ class LogAnalyzer:
         area = 0.0
         lidar_detections = 0
         brake_points: List[LogEntry] =  []
+        collision_count = 0
         for entry in self.log:
             if start_time is None and (entry.pos[X_COORD] - last_point[X_COORD] < 1
                                        or entry.pos[Y_COORD] - last_point[Y_COORD] < 1):
@@ -151,15 +152,14 @@ class LogAnalyzer:
             closest_seg = self.get_closest_seg_type(point_tuple)
             if closest_seg == RoadSegmentType.STRAIGHT:
                 self.analyze_steering(entry)
-            self.path_img.draw_incidents(self.incident_positions, self.env_id)
+            #self.path_img.draw_incidents(self.incident_positions, self.env_id)
 
             if entry.has_collided:
                 end_time = datetime.strptime(entry.time, "%Y-%m-%d %H:%M:%S")
-                self.path_img.draw_collision_point(point_tuple)
+                self.path_img.draw_collision_point(point_tuple,self.env_id, collision_count)
+                collision_count += 1
                 self.warnings.append(f'Collision detected at {entry.time},'
                                      f' position {entry.pos} (after {(end_time - start_time).seconds} seconds).')
-                
-
             end_time = datetime.strptime(entry.time, "%Y-%m-%d %H:%M:%S")
             last_point = entry.pos
 
@@ -216,8 +216,14 @@ class PathImage:
     def draw_actual_segment(self, start: Tuple[float, float], end: Tuple[float, float], lidar_detections: int):
         self.draw.line([tuple(start), tuple(end)], get_actual_transparency(lidar_detections), 3)
 
-    def draw_collision_point(self, point: Tuple[float, float]):
-        self.draw.text(point, "X", self.COLLISION_COLOUR)
+    def draw_collision_point(self, point: Tuple[float, float],env_id: int, collision_count: int):
+        x, y = point_to_gui_coords(point, env_id)
+        self.draw.ellipse(
+            (x - self.INCIDENT_RADIUS, y - self.INCIDENT_RADIUS,
+             x + self.INCIDENT_RADIUS, y + self.INCIDENT_RADIUS),
+            fill=self.INCIDENT_COLOUR
+        )
+        self.draw.text((x - 2, y - 5), str(collision_count + 1), self.INCIDENT_TEXT)
 
     def draw_incidents(self, incidents: List[Tuple[float, float]], env_id: int):
         for i, point in enumerate(incidents):
@@ -229,7 +235,8 @@ class PathImage:
             )
             self.draw.text((x - 2, y - 5), str(i + 1), self.INCIDENT_TEXT)
 
-    def draw_stop_point(self, point: Tuple[float, float]):
+    def draw_stop_point(self, point: Tuple[float, float],env_id: int, count: int):
+        point = point_to_gui_coords(point,env_id)
         self.draw.text(point, "X", self.STOP_COLOUR)
 
 
