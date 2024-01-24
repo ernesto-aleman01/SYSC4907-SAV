@@ -27,7 +27,7 @@ BACKGROUNDS = {
 ENV_IDS = {
     NH: 0,
     CITY: 1,
-    NHSS: 2
+    NHSS: 1
 }
 
 PR_COMMENT_FLAG = '--pr-branch'

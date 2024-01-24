@@ -1,4 +1,4 @@
-name: AirSim Integration Tests
+name: AirSim Integration Test NH_SS
 
 on:
   pull_request:
