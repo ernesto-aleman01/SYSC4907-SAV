@@ -105,11 +105,11 @@ class LogAnalyzer:
         target_time = self.path_len / TARGET_TIME_FRAC
         self.metrics.append(f'Log runtime was {delta} seconds. Target value is {target_time:.2f}')
 
-    def analyze_brake_points(self,brake_points: List[LogEntry]):
+    def analyze_brake_points(self,ss_brake_points: List[LogEntry]):
         count = 0
-        for entry in brake_points:
+        for entry in ss_brake_points:
             count += 1
-            self.path_img.draw_stop_point(entry.pos,self.env_id, count)
+            self.path_img.draw_ss_points(entry.pos,self.env_id, count)
             x, y = entry.pos
             if 114 < x < 118 and -1 < y < 1:
                 ss_id = 1
@@ -131,14 +131,14 @@ class LogAnalyzer:
         end_time: Optional[datetime] = None
         area = 0.0
         lidar_detections = 0
-        brake_points: List[LogEntry] =  []
+        ss_brake_points: List[LogEntry] =  []
         collision_count = 0
         for entry in self.log:
             if start_time is None and (entry.pos[X_COORD] - last_point[X_COORD] < 1
                                        or entry.pos[Y_COORD] - last_point[Y_COORD] < 1):
                 start_time = datetime.strptime(entry.time, "%Y-%m-%d %H:%M:%S")
-            if entry.brake == 1.0:
-                brake_points.append(entry)
+            if entry.brake == 1.0 and entry.stop_sign:
+                ss_brake_points.append(entry)
 
             point_tuple = entry.pos
             self.path_img.draw_actual_segment(
@@ -166,7 +166,7 @@ class LogAnalyzer:
         target_area = sum([s.length for s in self.segments]) * TARGET_AREA_FRAC
         self.metrics.append(f'Area between target and actual path is {area:.2f}. Target value is {target_area:.2f}')
         self.metrics.append(f'Total objects detected by lidar: {lidar_detections}')
-        self.analyze_brake_points(brake_points)
+        self.analyze_brake_points(ss_brake_points)
         self.analyze_speed(start_time, end_time)
         self.path_img.save(f'{self.test_case}.png')
 
@@ -235,9 +235,14 @@ class PathImage:
             )
             self.draw.text((x - 2, y - 5), str(i + 1), self.INCIDENT_TEXT)
 
-    def draw_stop_point(self, point: Tuple[float, float],env_id: int, count: int):
-        point = point_to_gui_coords(point,env_id)
-        self.draw.text(point, "X", self.STOP_COLOUR)
+    def draw_ss_points(self, point: Tuple[float, float],env_id: int, count: int):
+        x, y = point_to_gui_coords(point, env_id)
+        self.draw.ellipse(
+            (x - self.INCIDENT_RADIUS, y - self.INCIDENT_RADIUS,
+             x + self.INCIDENT_RADIUS, y + self.INCIDENT_RADIUS),
+            fill=self.STOP_COLOUR
+        )
+        self.draw.text((x - 2, y - 5), str(count + 1), self.INCIDENT_TEXT)
 
 
 if __name__ == '__main__':
