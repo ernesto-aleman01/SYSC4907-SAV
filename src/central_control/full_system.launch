@@ -13,6 +13,7 @@
   <node name="lane_keep_assist" pkg="lane_keep_assist" type="send_lane.py" />
   <node name="object_detector" pkg="sign_car_recognition" type="object_detection.py" />
   <node name="stop_sign_detector" pkg="sign_car_recognition" type="stop_sign_detection.py" />
+  <node name="traffic_light_detector" pkg="sign_car_recognition" type="traffic_light_state.py" />
   <node name="object_detect" pkg="lidar_object_recognition_2" type="new_lidar_object_detect.py"/>
 
   <node name="cruise_control" pkg="cruise_control" type="cruise_control.py" />
