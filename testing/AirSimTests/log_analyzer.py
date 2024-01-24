@@ -16,15 +16,18 @@ TARGET_TIME_FRAC = 4  # Average 4 m/s
 MAX_STEERING = 0.20
 NH = 'NH'
 CITY = 'CITY'
+NHSS = "NHSS"
 
 BACKGROUNDS = {
     NH: Path(__file__).parents[2] / 'src' / 'mapping_navigation' / 'AirSimMaps' / 'maps' / 'NH_Top.png',
     CITY: Path(__file__).parents[2] / 'src' / 'mapping_navigation' / 'AirSimMaps' / 'maps' / 'City_Top.png',
+    NHSS: Path(__file__).parents[2] / 'src' / 'mapping_navigation' / 'AirSimMaps' / 'maps' / 'NH_SS_Top.png',
 }
 
 ENV_IDS = {
     NH: 0,
     CITY: 1,
+    NHSS: 2
 }
 
 PR_COMMENT_FLAG = '--pr-branch'
@@ -103,7 +106,10 @@ class LogAnalyzer:
         self.metrics.append(f'Log runtime was {delta} seconds. Target value is {target_time:.2f}')
 
     def analyze_brake_points(self,brake_points: List[LogEntry]):
+        count = 0
         for entry in brake_points:
+            count +=1
+            self.path_img.draw_stop_point(entry.pos)
             x, y = entry.pos
             if 114 < x < 118 and -1 < y < 1:
                 ss_id = 1
@@ -196,6 +202,7 @@ class PathImage:
     ACTUAL_COLOUR = ImageColor.getrgb('blue')
     COLLISION_COLOUR = ImageColor.getrgb('red')
     INCIDENT_COLOUR = ImageColor.getrgb('blue')
+    STOP_COLOUR = ImageColor.getrgb('green')
     INCIDENT_TEXT = ImageColor.getrgb('white')
     INCIDENT_RADIUS = 5
 
@@ -227,6 +234,9 @@ class PathImage:
                 fill=self.INCIDENT_COLOUR
             )
             self.draw.text((x - 2, y - 5), str(i + 1), self.INCIDENT_TEXT)
+
+    def draw_stop_point(self, point: Tuple[float, float]):
+        self.draw.text(point, "X", self.STOP_COLOUR)
 
 
 if __name__ == '__main__':
