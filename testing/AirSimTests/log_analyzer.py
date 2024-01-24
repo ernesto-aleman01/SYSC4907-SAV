@@ -158,13 +158,7 @@ class LogAnalyzer:
                 self.path_img.draw_collision_point(point_tuple)
                 self.warnings.append(f'Collision detected at {entry.time},'
                                      f' position {entry.pos} (after {(end_time - start_time).seconds} seconds).')
-                break
-
-            if (entry.pos[X_COORD] - self.log[-1].pos[X_COORD] < 1
-                    and entry.pos[Y_COORD] - self.log[-1].pos[Y_COORD] < 1):
-                # Reached end of path, log end time
-                end_time = datetime.strptime(entry.time, "%Y-%m-%d %H:%M:%S")
-                break
+                
 
             end_time = datetime.strptime(entry.time, "%Y-%m-%d %H:%M:%S")
             last_point = entry.pos
