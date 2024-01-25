@@ -11,7 +11,7 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import String
 from typing import List, Tuple
 import math
-import PIL as Image
+import PIL as Images
 
 DEPTH_RES = 256
 MAX_DEPTH = 100
@@ -46,8 +46,9 @@ class SignDetector:
 
     # Do detection on an image and publish the detections array
     def colour_detect(self, img: Image):
-        img1d = np.frombuffer(img.data, dtype=np.uint8)
-        img_crop = Image.crop()
+        img1d = Images.open.np.frombuffer(img.data, dtype=np.uint8)
+        tl = DetectionResults
+        img_crop = img1d.crop(tl.ymin, tl.xmax, tl.ymax, tl.xmin)
         # reshape array to 3 channel image array
        # img_rgb = img1d.reshape(img.height, img.width, 3)
 
@@ -55,12 +56,12 @@ class SignDetector:
         # BGR(RGB color space) to
         # HSV(hue-saturation-value)
         # color space
-        hsvFrame = cv2.cvtColor(img1d, cv2.COLOR_BGR2HSV)
+        hsvFrame = cv2.cvtColor(img_crop, cv2.COLOR_BGR2HSV)
 
         # Set range for green color and
         # define mask
-        green_lower = np.array([25, 52, 72], np.uint8)
-        green_upper = np.array([102, 255, 255], np.uint8)
+        green_lower = np.array([40, 70, 80], np.uint8)
+        green_upper = np.array([70, 255, 255], np.uint8)
         green_mask = cv2.inRange(hsvFrame, green_lower, green_upper)
 
         # Morphological Transform, Dilation
@@ -71,7 +72,7 @@ class SignDetector:
 
         # For green color
         green_mask = cv2.dilate(green_mask, kernel)
-        res_green = cv2.bitwise_and(imageFrame, imageFrame,
+        res_green = cv2.bitwise_and(img_crop, img_crop,
                                     mask=green_mask)
 
         # f = open(f'/home/mango/test_imgs/n_{rospy.Time.now()}.txt', 'wb')
