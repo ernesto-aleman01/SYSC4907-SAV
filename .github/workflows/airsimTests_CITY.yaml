@@ -1,4 +1,4 @@
-name: AirSim Integration Tests
+name: AirSim Integration Test City
 
 on:
   pull_request:

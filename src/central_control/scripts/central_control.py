@@ -275,6 +275,7 @@ class CentralControl:
                         self.stop_state = StopState.RESUMING
                 elif self.stop_state == StopState.RESUMING:
                     # Stop breaking
+                    time.sleep(1)
                     self.car_controls.brake = RELEASE_BRAKE
 
                     # Count down cooldown period
