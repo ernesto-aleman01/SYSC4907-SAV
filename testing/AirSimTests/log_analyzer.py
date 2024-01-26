@@ -127,6 +127,7 @@ class LogAnalyzer:
 
     def analyze(self):
         last_point: Tuple[float, float] = self.log[0].pos
+        last_entry: LogEntry =self.log[0]
         start_time: Optional[datetime] = None
         end_time: Optional[datetime] = None
         area = 0.0
@@ -138,7 +139,8 @@ class LogAnalyzer:
                                        or entry.pos[Y_COORD] - last_point[Y_COORD] < 1):
                 start_time = datetime.strptime(entry.time, "%Y-%m-%d %H:%M:%S")
             if entry.brake == 1.0 and entry.stop_sign:
-                ss_brake_points.append(entry)
+                if not last_entry.brake == 1.0 and not last_entry.stop_sign:
+                    ss_brake_points.append(entry)
 
             point_tuple = entry.pos
             self.path_img.draw_actual_segment(
@@ -162,6 +164,7 @@ class LogAnalyzer:
                                      f' position {entry.pos} (after {(end_time - start_time).seconds} seconds).')
             end_time = datetime.strptime(entry.time, "%Y-%m-%d %H:%M:%S")
             last_point = entry.pos
+            last_entry = entry
 
         target_area = sum([s.length for s in self.segments]) * TARGET_AREA_FRAC
         self.metrics.append(f'Area between target and actual path is {area:.2f}. Target value is {target_area:.2f}')
