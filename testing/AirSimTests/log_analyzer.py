@@ -245,7 +245,7 @@ class PathImage:
              x + self.INCIDENT_RADIUS, y + self.INCIDENT_RADIUS),
             fill=self.STOP_COLOUR
         )
-        self.draw.text((x - 2, y - 5), str(count + 1), self.INCIDENT_TEXT)
+        self.draw.text((x - 2, y - 5), str(count), self.INCIDENT_TEXT)
 
 
 if __name__ == '__main__':
