@@ -121,6 +121,7 @@ class CentralControl:
         self.ready = False
         self.speed: float = INITIAL_SPEED
         self.nav_steering = 0.0
+        self.lane_steering = 0.0
         self.cc_state: Set[CCState] = {CCState.NORMAL}
 
         # Store detected sign and object data. Should refresh every object-detect cycle
@@ -137,7 +138,6 @@ class CentralControl:
         self.lka_lanes: List[LaneLine] = []
         self.lane_status: LaneBoundStatus = LaneBoundStatus.NO_BOUNDS
         self.lane_debug: LaneStatus = None
-        self.x_intercept = 0.0
 
         self.target_speed_pub = rospy.Publisher('target_speed', Float64, queue_size=10)
         self.current_road_segment = RoadSegmentType.STRAIGHT
@@ -165,6 +165,7 @@ class CentralControl:
     def listen(self):
         rospy.init_node("central_control", anonymous=True)
         rospy.Subscriber("lane_info", LaneStatus, self.handle_lane_data)
+        rospy.Subscriber("lka/steering", Float64, self.handle_lane_steering)
         rospy.Subscriber("navigation", PathData, self.handle_navigation_data)
         rospy.Subscriber("throttling", Float64, self.handle_throttling_data)
         rospy.Subscriber("object_detection", DetectionResults, self.handle_object_recognition)
@@ -223,8 +224,6 @@ class CentralControl:
             else:
                 # No bounds, use hardcoded default
                 r_slope, r_int = 0.27991, 137.28205 / 1.5
-            self.x_intercept = (l_int-r_int)/(r_slope-l_slope)
-            self.car_controls.steering = (MID_X-self.x_intercept)/MID_X
             if not self.object_data:
                 self.cc_state.add(CCState.NORMAL)
             else:
@@ -301,12 +300,14 @@ class CentralControl:
                 self.car_controls.is_manual_gear = False
                 self.car_controls.manual_gear = 1
             if self.ready:
+                #self.car_controls.steering = self.nav_steering
                 self.bridge.set_controls(self.car_controls)
 
                 # Mark danger zones
-                cv.line(scene, (0, round(l_int)), (round(-l_int / l_slope), 0), RED, LINE_THICKNESS)  # Left
-                cv.line(scene, (639, round(639 * r_slope + r_int)), (round(-r_int / r_slope), 0), RED,
-                        LINE_THICKNESS)  # Right
+                #cv.line(scene, (0, round(l_int)), (round(-l_int / l_slope), 0), RED, LINE_THICKNESS)  # Left
+                #cv.line(scene, (639, round(639 * r_slope + r_int)), (round(-r_int / r_slope), 0), RED,
+                        #LINE_THICKNESS)  # Right
+                #cv.putText(scene, f'Steering:{self.lane_steering}', (100, 100), FONT, FONT_SCALE, RED)
                 # Write debug image every two images
                 if self.tick % 2 == 0:
                     """
@@ -352,6 +353,15 @@ class CentralControl:
             self.lka_lanes = lane_data.segmentation_lane_bounds
             self.lane_status = LaneBoundStatus(lane_data.lane_segmentation_status)
 
+    def handle_lane_steering(self, lane_steering: Float64):
+        steering = lane_steering.data
+        if steering < LEFT_TURN_ANGLE:
+            self.lane_steering = LEFT_TURN_ANGLE
+        elif steering > RIGHT_TURN_ANGLE:
+            self.lane_steering = RIGHT_TURN_ANGLE
+        else:
+            self.lane_steering = steering
+        #self.car_controls.steering = self.lane_steering
 
     def handle_speed(self, speed: Float64):
         self.speed = speed.data
@@ -362,7 +372,7 @@ class CentralControl:
     # Returns a warning of a new road segment if one is within 5 meter of the car
     def handle_navigation_data(self, navigation_data: PathData):
         print("Obtained navigation data")
-        self.nav_steering = navigation_data.steering_angle
+        self.car_controls.steering = navigation_data.steering_angle
         self.current_road_segment = RoadSegmentType(navigation_data.current_segment)
         self.next_road_segment = RoadWarning(navigation_data.next_segment)
 
