@@ -122,6 +122,10 @@ class CentralControl:
         self.speed: float = INITIAL_SPEED
         self.nav_steering = 0.0
         self.lane_steering = 0.0
+        self.yolo_steering = 0.0
+        self.lidar_steering = 0.0
+        self.lidar_left = False
+        self.lidar_right = False
         self.cc_state: Set[CCState] = {CCState.NORMAL}
 
         # Store detected sign and object data. Should refresh every object-detect cycle
@@ -300,14 +304,13 @@ class CentralControl:
                 self.car_controls.is_manual_gear = False
                 self.car_controls.manual_gear = 1
             if self.ready:
-                #self.car_controls.steering = self.nav_steering
                 self.bridge.set_controls(self.car_controls)
 
                 # Mark danger zones
-                #cv.line(scene, (0, round(l_int)), (round(-l_int / l_slope), 0), RED, LINE_THICKNESS)  # Left
-                #cv.line(scene, (639, round(639 * r_slope + r_int)), (round(-r_int / r_slope), 0), RED,
+                # cv.line(scene, (0, round(l_int)), (round(-l_int / l_slope), 0), RED, LINE_THICKNESS)  # Left
+                # cv.line(scene, (639, round(639 * r_slope + r_int)), (round(-r_int / r_slope), 0), RED,
                         #LINE_THICKNESS)  # Right
-                #cv.putText(scene, f'Steering:{self.lane_steering}', (100, 100), FONT, FONT_SCALE, RED)
+                # cv.putText(scene, f'Steering:{self.lane_steering}', (100, 100), FONT, FONT_SCALE, RED)
                 # Write debug image every two images
                 if self.tick % 2 == 0:
                     """
@@ -361,7 +364,9 @@ class CentralControl:
             self.lane_steering = RIGHT_TURN_ANGLE
         else:
             self.lane_steering = steering
-        #self.car_controls.steering = self.lane_steering
+        if self.approachingIntersection:
+            return
+        self.car_controls.steering = self.lane_steering
 
     def handle_speed(self, speed: Float64):
         self.speed = speed.data
@@ -371,19 +376,21 @@ class CentralControl:
     # Returns the current road segment type
     # Returns a warning of a new road segment if one is within 5 meter of the car
     def handle_navigation_data(self, navigation_data: PathData):
-        print("Obtained navigation data")
-        self.car_controls.steering = navigation_data.steering_angle
+        # self.car_controls.steering = navigation_data.steering_angle
         self.current_road_segment = RoadSegmentType(navigation_data.current_segment)
         self.next_road_segment = RoadWarning(navigation_data.next_segment)
 
         self.approachingIntersection = RoadWarning(navigation_data.next_segment) == RoadWarning.INTERSECTION_AHEAD or \
                                        RoadSegmentType(navigation_data.current_segment) == RoadSegmentType.INTERSECTION
+        if self.approachingIntersection:
+            self.car_controls.steering = navigation_data.steering_angle
 
     def handle_throttling_data(self, throttling_data: Float64):
         self.car_controls.throttle = throttling_data.data
 
     def handle_lidar_detection(self, lidar_data: Float64MultiArray):
-
+        self.lidar_left = False
+        self.lidar_right = False
         # Current implementation of lidar obstacle avoidance overrides navigation steering suggestion.
         # This can cause a crash if the car is at an intersection, where it can prevent turning or cause an opposite
         # turn than what is required depending on nearby obstacles
@@ -441,8 +448,10 @@ class CentralControl:
             # The "x" dimension, index 0, refers to the horizontal distance from the car.
             if closest_aabb_vector[1] > 0:
                 self.car_controls.steering = -(min(MAX_TURN_ANGLE, 0.125 / closest_aabb_vector[0]))
+                self.lidar_left = True
             elif closest_aabb_vector[1] < 0:
                 self.car_controls.steering = min(MAX_TURN_ANGLE, 0.125 / closest_aabb_vector[0])
+                self.lidar_right = True
 
     def handle_object_recognition(self, res: DetectionResults):
         # Determine the "region" that the object falls into (all in front)

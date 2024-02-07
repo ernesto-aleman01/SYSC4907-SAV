@@ -64,7 +64,9 @@ class LidarProcessor:
         o3d_point_cloud.points = o3d.utility.Vector3dVector(translated_points)
         dbscan = DBSCAN(eps=self.eps, min_samples=self.min_samples)
         np_arr_cloud_point = np.array(o3d_point_cloud.points)
-        labels = dbscan.fit_predict(np_arr_cloud_point)
+        labels = []
+        if len(np_arr_cloud_point) != 0:
+            labels = dbscan.fit_predict(np_arr_cloud_point)
 
         clusters = []
         for label in set(labels):
