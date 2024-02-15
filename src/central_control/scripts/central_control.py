@@ -100,8 +100,8 @@ RED = (0, 0, 255)
 GREEN = (0, 255, 0)
 YELLOW = (0, 255, 255)
 
-LEFT_TURN_ANGLE = -0.8
-RIGHT_TURN_ANGLE = 0.8
+LEFT_TURN_ANGLE = -0.6
+RIGHT_TURN_ANGLE = 0.6
 MAX_TURN_ANGLE = 1.0
 
 STOPPED_SPEED = 0.001
@@ -127,6 +127,7 @@ class CentralControl:
         self.lidar_steering = 0.0
         self.lidar_left = False
         self.lidar_right = False
+        self.avoiding = 0
         self.cc_state: Set[CCState] = {CCState.NORMAL}
 
         # Store detected sign and object data. Should refresh every object-detect cycle
@@ -173,7 +174,7 @@ class CentralControl:
 
     def listen(self):
         rospy.init_node("central_control", anonymous=True)
-        rospy.Subscriber("lane_info", LaneStatus, self.handle_lane_data)
+        #rospy.Subscriber("lane_info", LaneStatus, self.handle_lane_data)
         rospy.Subscriber("lka/steering", Float64, self.handle_lane_steering)
         rospy.Subscriber("lka/lanes", Lanes, self.handle_lka_lines)
         rospy.Subscriber("navigation", PathData, self.handle_navigation_data)
@@ -184,7 +185,7 @@ class CentralControl:
         rospy.Subscriber("stop_sign_detection", DetectionResults, self.handle_stop_sign)
 
         # Midpoint of the image width
-        MID_X = IMAGE_WIDTH / 2
+        MID_X = IMAGE_WIDTH / 3
 
         rate = rospy.Rate(10)  # 10hz
         while self.next_road_segment != RoadWarning.END_OF_PATH:
@@ -219,28 +220,29 @@ class CentralControl:
             # NOTE: The lane line detections from LKA are done on a 640 x 360 image
             # slope = (y1-y2)/(x1-x2)
             # intercept = y - ax
-            if self.lane_status == LaneBoundStatus.ONE_BOUND_LEFT or self.lane_status == LaneBoundStatus.TWO_BOUNDS:
-                lane = self.lanes[0]
-                l_slope = (lane.y1 - lane.y2) / (lane.x1 - lane.x2)
-                l_int = (lane.y2 - l_slope * lane.x2)
-            else:
-                # No bounds, use hardcoded default
-                l_slope, l_int = -0.19868, 364 / 1.5
+            # if self.lane_status == LaneBoundStatus.ONE_BOUND_LEFT or self.lane_status == LaneBoundStatus.TWO_BOUNDS:
+            #     lane = self.lanes[0]
+            #     l_slope = (lane.y1 - lane.y2) / (lane.x1 - lane.x2)
+            #     l_int = (lane.y2 - l_slope * lane.x2)
+            # else:
+            #     # No bounds, use hardcoded default
+            #     l_slope, l_int = -0.19868, 364 / 1.5
 
-            if self.lane_status == LaneBoundStatus.ONE_BOUND_RIGHT or self.lane_status == LaneBoundStatus.TWO_BOUNDS:
-                lane = self.lanes[1] if len(self.lanes) == 2 else self.lanes[0]
-                r_slope = (lane.y1 - lane.y2) / (lane.x1 - lane.x2)
-                r_int = (lane.y2 - r_slope * lane.x2)
-            else:
+            # if self.lane_status == LaneBoundStatus.ONE_BOUND_RIGHT or self.lane_status == LaneBoundStatus.TWO_BOUNDS:
+            #     lane = self.lanes[1] if len(self.lanes) == 2 else self.lanes[0]
+            #     r_slope = (lane.y1 - lane.y2) / (lane.x1 - lane.x2)
+            #     r_int = (lane.y2 - r_slope * lane.x2)
+            # else:
                 # No bounds, use hardcoded default
-                r_slope, r_int = 0.27991, 137.28205 / 1.5
+            #     r_slope, r_int = 0.27991, 137.28205 / 1.5
             if not self.object_data:
                 self.cc_state.add(CCState.NORMAL)
             else:
                 for obj in self.object_data:
                     is_danger = False
                     # Get x-center, y near the bottom of bounding box
-                    cx, cy = (obj.xmax + obj.xmin) / 2, 0.5 * (obj.ymax - obj.ymin) + obj.ymin
+                    # cx, cy = (obj.xmax + obj.xmin) / 2, 0.5 * (obj.ymax - obj.ymin) + obj.ymin
+                    cx, cy = (obj.xmax + obj.xmin) / 2, obj.ymax
                     # Check if in danger zone
                     if cy > (self.l_slope * cx + self.l_int) and cy > (self.r_slope * cx + self.r_int) and obj.depth < LOOKAHEAD_DEPTH:
                         is_danger = True
@@ -260,7 +262,6 @@ class CentralControl:
             if not self.avoid:
                 self.cc_state.discard(CCState.OBJECT_AVOID)
 
-
             if CCState.OBJECT_AVOID in self.cc_state:
                 # Actions taken when in Object Avoidance mode
                 # Sort for closest object
@@ -269,14 +270,15 @@ class CentralControl:
                 cur = self.avoid[0]
                 cx, cy = (math.floor((cur.xmax + cur.xmin) / 2), math.floor((cur.ymax + cur.ymin) / 2))
                 # Take action based on where the object approximately is
-                if cx > MID_X:
+                if self.lane_status == LaneBoundStatus.ONE_BOUND_LEFT:
                     # Right side
-                    self.car_controls.steering = LEFT_TURN_ANGLE
-                    cv.putText(scene, 'Go Left', (cx, cy), FONT, FONT_SCALE, YELLOW)
+                    self.yolo_steering = RIGHT_TURN_ANGLE
+                    cv.putText(scene, 'Go Right', (cx, cy), FONT, FONT_SCALE, YELLOW)
                 else:
                     # Left side
-                    self.car_controls.steering = RIGHT_TURN_ANGLE
-                    cv.putText(scene, 'Go Right', (cx, cy), FONT, FONT_SCALE, YELLOW)
+                    self.yolo_steering = LEFT_TURN_ANGLE
+                    cv.putText(scene, 'Go Left', (cx, cy), FONT, FONT_SCALE, YELLOW)
+                cv.putText(scene, f'LANE:{self.lane_status}', (100, 100), FONT, FONT_SCALE, RED)
             elif CCState.STREET_RULE in self.cc_state:
                 # Actions taken when in Street Rule mode
                 if self.stop_state == StopState.STOPPING:
@@ -309,6 +311,25 @@ class CentralControl:
             else:
                 self.car_controls.is_manual_gear = False
                 self.car_controls.manual_gear = 1
+            # Steering priority descision
+            if self.avoiding > 0:
+                # if self.avoiding == 3:
+                #     if self.car_controls.steering == LEFT_TURN_ANGLE:
+                #         self.car_controls.steering = RIGHT_TURN_ANGLE
+                #     if self.car_controls.steering == RIGHT_TURN_ANGLE:
+                #         self.car_controls.steering = LEFT_TURN_ANGLE
+                # else:
+                self.car_controls.steering = self.nav_steering
+                self.avoiding -= 1
+            elif CCState.OBJECT_AVOID in self.cc_state:
+                self.car_controls.steering = self.yolo_steering
+                self.avoiding = 10
+            elif self.approachingIntersection:
+                self.car_controls.steering = self.nav_steering
+            else:
+                self.car_controls.steering = self.lane_steering
+
+            # Set Controls in simulator
             if self.ready:
                 self.bridge.set_controls(self.car_controls)
 
@@ -369,19 +390,29 @@ class CentralControl:
             self.lane_steering = RIGHT_TURN_ANGLE
         else:
             self.lane_steering = steering
-        if self.approachingIntersection:
+        if self.approachingIntersection or CCState.OBJECT_AVOID in self.cc_state:
             return
-        self.car_controls.steering = self.lane_steering
+        # self.car_controls.steering = self.lane_steering
 
     def handle_lka_lines(self, lanes: Lanes):
-        self.r_slope, self.r_int = 0.27991, 137.28205 / 1.5
-        self.l_slope, self.l_int = -0.6, 364 / 1.5
         if lanes.lane_lines[0].exists:
             self.l_int = lanes.lane_lines[0].y_cept
             self.l_slope = lanes.lane_lines[0].slope
+            self.lane_status = LaneBoundStatus.ONE_BOUND_LEFT
+        else:
+            self.l_slope, self.l_int = -0.6, 364 / 1.5
+
         if lanes.lane_lines[1].exists:
             self.r_int = lanes.lane_lines[1].y_cept
             self.r_slope = lanes.lane_lines[1].slope
+            self.lane_status = LaneBoundStatus.ONE_BOUND_RIGHT
+        else:
+            self.r_slope, self.r_int = 0.27991, 137.28205 / 1.5
+
+        if lanes.lane_lines[0].exists and lanes.lane_lines[1].exists:
+            self.lane_status = LaneBoundStatus.TWO_BOUNDS
+        elif not lanes.lane_lines[0].exists and not lanes.lane_lines[1].exists:
+            self.lane_status = LaneBoundStatus.NO_BOUNDS
 
 
 
@@ -394,14 +425,13 @@ class CentralControl:
     # Returns the current road segment type
     # Returns a warning of a new road segment if one is within 5 meter of the car
     def handle_navigation_data(self, navigation_data: PathData):
-        # self.car_controls.steering = navigation_data.steering_angle
+        self.nav_steering = navigation_data.steering_angle
         self.current_road_segment = RoadSegmentType(navigation_data.current_segment)
         self.next_road_segment = RoadWarning(navigation_data.next_segment)
 
         self.approachingIntersection = RoadWarning(navigation_data.next_segment) == RoadWarning.INTERSECTION_AHEAD or \
                                        RoadSegmentType(navigation_data.current_segment) == RoadSegmentType.INTERSECTION
-        if self.approachingIntersection:
-            self.car_controls.steering = navigation_data.steering_angle
+
 
     def handle_throttling_data(self, throttling_data: Float64):
         self.car_controls.throttle = throttling_data.data
@@ -487,10 +517,7 @@ class CentralControl:
 
         detection_list: List[DetectionResult] = res.detection_results
         for detection in detection_list:
-            if detection.class_num == 2 and detection.confidence > 0.6:
-                # Only deal with cars for now
-                self.object_data.append(detection)
-            if detection.class_num == 0 and detection.confidence > 0.6:
+            if (detection.class_num == 0 or detection.class_num == 2 or detection.class_num == 7) and detection.confidence > 0.4:
                 # Only deal with cars for now
                 self.object_data.append(detection)
 
