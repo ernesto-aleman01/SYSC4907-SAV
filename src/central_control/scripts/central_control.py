@@ -125,6 +125,7 @@ class CentralControl:
         self.lane_steering = 0.0
         self.yolo_steering = 0.0
         self.lidar_steering = 0.0
+        self.reverse_steering = 0.0
         self.lidar_left = False
         self.lidar_right = False
         self.avoiding = 0
@@ -244,7 +245,9 @@ class CentralControl:
                     # cx, cy = (obj.xmax + obj.xmin) / 2, 0.5 * (obj.ymax - obj.ymin) + obj.ymin
                     cx, cy = (obj.xmax + obj.xmin) / 2, obj.ymax
                     # Check if in danger zone
-                    if cy > (self.l_slope * cx + self.l_int) and cy > (self.r_slope * cx + self.r_int) and obj.depth < LOOKAHEAD_DEPTH:
+                    if ((cy > (self.l_slope * obj.xmax + self.l_int) or cy > (self.l_slope * obj.xmin + self.l_int)) and
+                            (cy > (self.r_slope * obj.xmin + self.r_int) or cy > (self.r_slope * obj.xmax + self.r_int))
+                            and obj.depth < LOOKAHEAD_DEPTH):
                         is_danger = True
                         self.cc_state.add(CCState.OBJECT_AVOID)
                         self.avoid.append(obj)
@@ -270,7 +273,7 @@ class CentralControl:
                 cur = self.avoid[0]
                 cx, cy = (math.floor((cur.xmax + cur.xmin) / 2), math.floor((cur.ymax + cur.ymin) / 2))
                 # Take action based on where the object approximately is
-                if self.lane_status == LaneBoundStatus.ONE_BOUND_LEFT:
+                if self.lane_status == LaneBoundStatus.ONE_BOUND_LEFT or self.lane_status == LaneBoundStatus.NO_BOUNDS:
                     # Right side
                     self.yolo_steering = RIGHT_TURN_ANGLE
                     cv.putText(scene, 'Go Right', (cx, cy), FONT, FONT_SCALE, YELLOW)
@@ -307,12 +310,16 @@ class CentralControl:
             #if self.speed > STOPPED_SPEED and self.car_controls.brake != HOLD_BRAKE:
                 self.car_controls.is_manual_gear = True
                 self.car_controls.manual_gear = -1
-                time.sleep(2)
+                time.sleep(1.4)
+                #self.car_controls.brake = HOLD_BRAKE
             else:
                 self.car_controls.is_manual_gear = False
                 self.car_controls.manual_gear = 1
+
             # Steering priority descision
-            if self.avoiding > 0:
+            if self.car_controls.manual_gear == -1:
+                self.car_controls.steering = self.reverse_steering
+            elif self.avoiding > 0:
                 # if self.avoiding == 3:
                 #     if self.car_controls.steering == LEFT_TURN_ANGLE:
                 #         self.car_controls.steering = RIGHT_TURN_ANGLE
@@ -327,7 +334,10 @@ class CentralControl:
             elif self.approachingIntersection:
                 self.car_controls.steering = self.nav_steering
             else:
-                self.car_controls.steering = self.lane_steering
+                if self.lane_status == LaneBoundStatus.NO_BOUNDS:
+                    self.car_controls.steering = 0.1
+                else:
+                    self.car_controls.steering = self.lane_steering
 
             # Set Controls in simulator
             if self.ready:
