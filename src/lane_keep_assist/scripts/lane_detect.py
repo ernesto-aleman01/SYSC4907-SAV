@@ -246,19 +246,19 @@ def lane_detect(cv_img: np.ndarray, segmented_image: np.ndarray) -> Tuple[List, 
                     slope = fit[0]
                     if 0.1 > slope > -0.1:
                         continue
-                    cv.line(masked_segmented, (x1, y1), (x2, y2), (255, 0, 0), 2)
+                    # cv.line(cv_img, (x1, y1), (x2, y2), (255, 0, 0), 2)
 
         if gradient_lane_lines:
             for line in gradient_lane_lines:
                 coord1, coord2, coord3, coord4 = line
-                cv.line(masked_segmented, (coord1, coord2), (coord3, coord4), (0, 0, 255), 2)
+                cv.line(cv_img, (coord1, coord2), (coord3, coord4), (0, 0, 255), 2)
 
         if segmented_lane_lines:
             for line in segmented_lane_lines:
                 coord1, coord2, coord3, coord4 = line
-                cv.line(masked_segmented, (coord1, coord2), (coord3, coord4), (0, 255, 0), 2)
-        cv.imshow("masked", masked_segmented)
-        # cv.imshow("demo", cv_img)
+                # cv.line(cv_img, (coord1, coord2), (coord3, coord4), (0, 255, 0), 2)
+        # cv.imshow("masked", masked_segmented)
+        cv.imshow("demo", cv_img)
         cv.waitKey(1)
     except IndexError as e:
         print(e)

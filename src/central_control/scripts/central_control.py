@@ -8,6 +8,7 @@ import time
 from sign_car_recognition.msg import DetectionResult, DetectionResults
 from std_msgs.msg import Float64, Float64MultiArray
 from lane_keep_assist.msg import LaneStatus, LaneLine
+from lka.msg import Lanes, Lane
 from common.bridge import CarControls, get_bridge, SCENE_IMAGE
 from lane_bound_status import LaneBoundStatus
 from mapping_navigation.msg import PathData
@@ -79,8 +80,8 @@ class StopState(Enum):
 
 
 ROADWARNINGSPEEDS = {RoadWarning.TURN_AHEAD: 2.5, RoadWarning.INTERSECTION_AHEAD: 2.5,
-                     RoadWarning.STRAIGHT_ROAD_AHEAD: 5, RoadWarning.END_OF_PATH: 0}
-ROADSEGMENTSPEEDS = {RoadSegmentType.STRAIGHT: 5, RoadSegmentType.INTERSECTION: 2.5, RoadSegmentType.TURN: 2.5}
+                     RoadWarning.STRAIGHT_ROAD_AHEAD: 2.5, RoadWarning.END_OF_PATH: 0}
+ROADSEGMENTSPEEDS = {RoadSegmentType.STRAIGHT: 2.5, RoadSegmentType.INTERSECTION: 2.5, RoadSegmentType.TURN: 2.5}
 
 INITIAL_COOLDOWN = 10
 INITIAL_SPEED = 0
@@ -139,9 +140,13 @@ class CentralControl:
         # Action, Data
         self.persistent_actions: List[Tuple[CarAction, Any]] = []
         # Store Lane Keep Assist lane detections
-        self.lka_lanes: List[LaneLine] = []
+        self.lanes: List[LaneLine] = []
         self.lane_status: LaneBoundStatus = LaneBoundStatus.NO_BOUNDS
         self.lane_debug: LaneStatus = None
+        self.l_int = 364 / 1.5
+        self.l_slope = -0.6
+        self.r_int = 137.28205 / 1.5
+        self.r_slope = 0.27991
 
         self.target_speed_pub = rospy.Publisher('target_speed', Float64, queue_size=10)
         self.current_road_segment = RoadSegmentType.STRAIGHT
@@ -170,6 +175,7 @@ class CentralControl:
         rospy.init_node("central_control", anonymous=True)
         rospy.Subscriber("lane_info", LaneStatus, self.handle_lane_data)
         rospy.Subscriber("lka/steering", Float64, self.handle_lane_steering)
+        rospy.Subscriber("lka/lanes", Lanes, self.handle_lka_lines)
         rospy.Subscriber("navigation", PathData, self.handle_navigation_data)
         rospy.Subscriber("throttling", Float64, self.handle_throttling_data)
         rospy.Subscriber("object_detection", DetectionResults, self.handle_object_recognition)
@@ -214,7 +220,7 @@ class CentralControl:
             # slope = (y1-y2)/(x1-x2)
             # intercept = y - ax
             if self.lane_status == LaneBoundStatus.ONE_BOUND_LEFT or self.lane_status == LaneBoundStatus.TWO_BOUNDS:
-                lane = self.lka_lanes[0]
+                lane = self.lanes[0]
                 l_slope = (lane.y1 - lane.y2) / (lane.x1 - lane.x2)
                 l_int = (lane.y2 - l_slope * lane.x2)
             else:
@@ -222,7 +228,7 @@ class CentralControl:
                 l_slope, l_int = -0.19868, 364 / 1.5
 
             if self.lane_status == LaneBoundStatus.ONE_BOUND_RIGHT or self.lane_status == LaneBoundStatus.TWO_BOUNDS:
-                lane = self.lka_lanes[1] if len(self.lka_lanes) == 2 else self.lka_lanes[0]
+                lane = self.lanes[1] if len(self.lanes) == 2 else self.lanes[0]
                 r_slope = (lane.y1 - lane.y2) / (lane.x1 - lane.x2)
                 r_int = (lane.y2 - r_slope * lane.x2)
             else:
@@ -236,7 +242,7 @@ class CentralControl:
                     # Get x-center, y near the bottom of bounding box
                     cx, cy = (obj.xmax + obj.xmin) / 2, 0.5 * (obj.ymax - obj.ymin) + obj.ymin
                     # Check if in danger zone
-                    if cy > (l_slope * cx + l_int) and cy > (r_slope * cx + r_int) and obj.depth < LOOKAHEAD_DEPTH:
+                    if cy > (self.l_slope * cx + self.l_int) and cy > (self.r_slope * cx + self.r_int) and obj.depth < LOOKAHEAD_DEPTH:
                         is_danger = True
                         self.cc_state.add(CCState.OBJECT_AVOID)
                         self.avoid.append(obj)
@@ -307,9 +313,8 @@ class CentralControl:
                 self.bridge.set_controls(self.car_controls)
 
                 # Mark danger zones
-                # cv.line(scene, (0, round(l_int)), (round(-l_int / l_slope), 0), RED, LINE_THICKNESS)  # Left
-                # cv.line(scene, (639, round(639 * r_slope + r_int)), (round(-r_int / r_slope), 0), RED,
-                        #LINE_THICKNESS)  # Right
+                cv.line(scene, (0, round(self.l_int)), (round(-self.l_int / self.l_slope), 0), RED, LINE_THICKNESS)  # Left
+                cv.line(scene, (639, round(639 * self.r_slope + self.r_int)), (round(-self.r_int / self.r_slope), 0), RED, LINE_THICKNESS)  # Right
                 # cv.putText(scene, f'Steering:{self.lane_steering}', (100, 100), FONT, FONT_SCALE, RED)
                 # Write debug image every two images
                 if self.tick % 2 == 0:
@@ -345,15 +350,15 @@ class CentralControl:
 
         if grad_av_diff < hls_av_diff < THRESHOLD:
             # Gradient is more reliable
-            self.lka_lanes = lane_data.gradient_lane_bounds
+            self.lanes = lane_data.gradient_lane_bounds
             self.lane_status = LaneBoundStatus(lane_data.lane_gradient_status)
         elif grad_av_diff < THRESHOLD:
             # HLS color thresholding is more reliable
-            self.lka_lanes = lane_data.hls_lane_bounds
+            self.lanes = lane_data.hls_lane_bounds
             self.lane_status = LaneBoundStatus(lane_data.lane_hls_status)
         else:
             # Other two methods are deemed unreliable, use segmentation results
-            self.lka_lanes = lane_data.segmentation_lane_bounds
+            self.lanes = lane_data.segmentation_lane_bounds
             self.lane_status = LaneBoundStatus(lane_data.lane_segmentation_status)
 
     def handle_lane_steering(self, lane_steering: Float64):
@@ -367,6 +372,19 @@ class CentralControl:
         if self.approachingIntersection:
             return
         self.car_controls.steering = self.lane_steering
+
+    def handle_lka_lines(self, lanes: Lanes):
+        self.r_slope, self.r_int = 0.27991, 137.28205 / 1.5
+        self.l_slope, self.l_int = -0.6, 364 / 1.5
+        if lanes.lane_lines[0].exists:
+            self.l_int = lanes.lane_lines[0].y_cept
+            self.l_slope = lanes.lane_lines[0].slope
+        if lanes.lane_lines[1].exists:
+            self.r_int = lanes.lane_lines[1].y_cept
+            self.r_slope = lanes.lane_lines[1].slope
+
+
+
 
     def handle_speed(self, speed: Float64):
         self.speed = speed.data
@@ -452,6 +470,10 @@ class CentralControl:
             elif closest_aabb_vector[1] < 0:
                 self.car_controls.steering = min(MAX_TURN_ANGLE, 0.125 / closest_aabb_vector[0])
                 self.lidar_right = True
+
+        x1, x2, y1, y2 = math.floor(obj.xmin), math.floor(obj.xmax), math.floor(obj.ymin), math.floor(
+            obj.ymax)
+        cv.rectangle(scene, (x1, y1), (x2, y2), color, REC_THICKNESS)
 
     def handle_object_recognition(self, res: DetectionResults):
         # Determine the "region" that the object falls into (all in front)

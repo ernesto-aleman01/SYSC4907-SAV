@@ -26,7 +26,7 @@ class LaneKeepAssist:
 
     def listener(self):
         rospy.init_node('LaneKeepAssist', anonymous=True)
-        rospy.Subscriber("airsim/image_raw", Image, self.handle_camera_data)
+        rospy.Subscriber("fast_cam", Image, self.handle_camera_data)
         rospy.Subscriber("segmented_image", Image, self.handle_segmented_image)
 
         rate = rospy.Rate(10)
