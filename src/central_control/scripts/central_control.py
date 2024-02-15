@@ -80,8 +80,8 @@ class StopState(Enum):
 
 
 ROADWARNINGSPEEDS = {RoadWarning.TURN_AHEAD: 2.5, RoadWarning.INTERSECTION_AHEAD: 2.5,
-                     RoadWarning.STRAIGHT_ROAD_AHEAD: 2.5, RoadWarning.END_OF_PATH: 0}
-ROADSEGMENTSPEEDS = {RoadSegmentType.STRAIGHT: 2.5, RoadSegmentType.INTERSECTION: 2.5, RoadSegmentType.TURN: 2.5}
+                     RoadWarning.STRAIGHT_ROAD_AHEAD: 5.0, RoadWarning.END_OF_PATH: 0}
+ROADSEGMENTSPEEDS = {RoadSegmentType.STRAIGHT: 5.0, RoadSegmentType.INTERSECTION: 2.5, RoadSegmentType.TURN: 2.5}
 
 INITIAL_COOLDOWN = 10
 INITIAL_SPEED = 0
@@ -330,7 +330,7 @@ class CentralControl:
                 self.avoiding -= 1
             elif CCState.OBJECT_AVOID in self.cc_state:
                 self.car_controls.steering = self.yolo_steering
-                self.avoiding = 10
+                self.avoiding = 3
             elif self.approachingIntersection:
                 self.car_controls.steering = self.nav_steering
             else:
@@ -511,9 +511,6 @@ class CentralControl:
                 self.car_controls.steering = min(MAX_TURN_ANGLE, 0.125 / closest_aabb_vector[0])
                 self.lidar_right = True
 
-        x1, x2, y1, y2 = math.floor(obj.xmin), math.floor(obj.xmax), math.floor(obj.ymin), math.floor(
-            obj.ymax)
-        cv.rectangle(scene, (x1, y1), (x2, y2), color, REC_THICKNESS)
 
     def handle_object_recognition(self, res: DetectionResults):
         # Determine the "region" that the object falls into (all in front)
