@@ -11,6 +11,7 @@ class LogEntry:
                  brake: float,
                  speed: float,
                  has_collided: bool,
+                 stop_sign: bool,
                  lidar_detections: int):
         self.time = time
         self.pos = pos
@@ -19,6 +20,7 @@ class LogEntry:
         self.brake = brake
         self.speed = speed
         self.has_collided = has_collided
+        self.stop_sign = stop_sign
         self.lidar_detections = lidar_detections
 
     def default(self, o: Any) -> Any:

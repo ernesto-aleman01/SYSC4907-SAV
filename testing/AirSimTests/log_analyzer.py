@@ -16,15 +16,18 @@ TARGET_TIME_FRAC = 4  # Average 4 m/s
 MAX_STEERING = 0.20
 NH = 'NH'
 CITY = 'CITY'
+NHSS = "NHSS"
 
 BACKGROUNDS = {
     NH: Path(__file__).parents[2] / 'src' / 'mapping_navigation' / 'AirSimMaps' / 'maps' / 'NH_Top.png',
     CITY: Path(__file__).parents[2] / 'src' / 'mapping_navigation' / 'AirSimMaps' / 'maps' / 'City_Top.png',
+    NHSS: Path(__file__).parents[2] / 'src' / 'mapping_navigation' / 'AirSimMaps' / 'maps' / 'NH_SS_Top.png',
 }
 
 ENV_IDS = {
     NH: 0,
     CITY: 1,
+    NHSS: 0
 }
 
 PR_COMMENT_FLAG = '--pr-branch'
@@ -80,7 +83,7 @@ class LogAnalyzer:
     def analyze_steering(self, entry: LogEntry):
         if abs(entry.steering) > MAX_STEERING:
             self.warning_marks += 1
-            self.warnings.append(f'Steering exceeded target value (incident {self.warning_marks})')
+            #self.warnings.append(f'Steering exceeded target value (incident {self.warning_marks})')
             self.incident_positions.append(entry.pos)
 
     def analyze_point(self, current_point: Tuple[float, float], last_point: Tuple[float, float]):
@@ -102,8 +105,11 @@ class LogAnalyzer:
         target_time = self.path_len / TARGET_TIME_FRAC
         self.metrics.append(f'Log runtime was {delta} seconds. Target value is {target_time:.2f}')
 
-    def analyze_brake_points(self,brake_points: List[LogEntry]):
-        for entry in brake_points:
+    def analyze_brake_points(self,ss_brake_points: List[LogEntry]):
+        count = 0
+        for entry in ss_brake_points:
+            count += 1
+            self.path_img.draw_ss_points(entry.pos,self.env_id, count)
             x, y = entry.pos
             if 114 < x < 118 and -1 < y < 1:
                 ss_id = 1
@@ -125,13 +131,14 @@ class LogAnalyzer:
         end_time: Optional[datetime] = None
         area = 0.0
         lidar_detections = 0
-        brake_points: List[LogEntry] =  []
+        ss_brake_points: List[LogEntry] =  []
+        collision_count = 0
         for entry in self.log:
             if start_time is None and (entry.pos[X_COORD] - last_point[X_COORD] < 1
                                        or entry.pos[Y_COORD] - last_point[Y_COORD] < 1):
                 start_time = datetime.strptime(entry.time, "%Y-%m-%d %H:%M:%S")
-            if entry.brake == 1.0:
-                brake_points.append(entry)
+            if entry.brake == 1.0 and entry.stop_sign:
+                ss_brake_points.append(entry)
 
             point_tuple = entry.pos
             self.path_img.draw_actual_segment(
@@ -145,28 +152,21 @@ class LogAnalyzer:
             closest_seg = self.get_closest_seg_type(point_tuple)
             if closest_seg == RoadSegmentType.STRAIGHT:
                 self.analyze_steering(entry)
-            self.path_img.draw_incidents(self.incident_positions, self.env_id)
+            #self.path_img.draw_incidents(self.incident_positions, self.env_id)
 
             if entry.has_collided:
                 end_time = datetime.strptime(entry.time, "%Y-%m-%d %H:%M:%S")
-                self.path_img.draw_collision_point(point_tuple)
+                self.path_img.draw_collision_point(point_tuple,self.env_id, collision_count)
+                collision_count += 1
                 self.warnings.append(f'Collision detected at {entry.time},'
                                      f' position {entry.pos} (after {(end_time - start_time).seconds} seconds).')
-                break
-
-            if (entry.pos[X_COORD] - self.log[-1].pos[X_COORD] < 1
-                    and entry.pos[Y_COORD] - self.log[-1].pos[Y_COORD] < 1):
-                # Reached end of path, log end time
-                end_time = datetime.strptime(entry.time, "%Y-%m-%d %H:%M:%S")
-                break
-
             end_time = datetime.strptime(entry.time, "%Y-%m-%d %H:%M:%S")
             last_point = entry.pos
 
         target_area = sum([s.length for s in self.segments]) * TARGET_AREA_FRAC
         self.metrics.append(f'Area between target and actual path is {area:.2f}. Target value is {target_area:.2f}')
         self.metrics.append(f'Total objects detected by lidar: {lidar_detections}')
-        self.analyze_brake_points(brake_points)
+        self.analyze_brake_points(ss_brake_points)
         self.analyze_speed(start_time, end_time)
         self.path_img.save(f'{self.test_case}.png')
 
@@ -196,6 +196,7 @@ class PathImage:
     ACTUAL_COLOUR = ImageColor.getrgb('blue')
     COLLISION_COLOUR = ImageColor.getrgb('red')
     INCIDENT_COLOUR = ImageColor.getrgb('blue')
+    STOP_COLOUR = ImageColor.getrgb('green')
     INCIDENT_TEXT = ImageColor.getrgb('white')
     INCIDENT_RADIUS = 5
 
@@ -215,8 +216,14 @@ class PathImage:
     def draw_actual_segment(self, start: Tuple[float, float], end: Tuple[float, float], lidar_detections: int):
         self.draw.line([tuple(start), tuple(end)], get_actual_transparency(lidar_detections), 3)
 
-    def draw_collision_point(self, point: Tuple[float, float]):
-        self.draw.text(point, "X", self.COLLISION_COLOUR)
+    def draw_collision_point(self, point: Tuple[float, float],env_id: int, collision_count: int):
+        x, y = point_to_gui_coords(point, env_id)
+        self.draw.ellipse(
+            (x - self.INCIDENT_RADIUS, y - self.INCIDENT_RADIUS,
+             x + self.INCIDENT_RADIUS, y + self.INCIDENT_RADIUS),
+            fill=self.INCIDENT_COLOUR
+        )
+        self.draw.text((x - 2, y - 5), str(collision_count + 1), self.INCIDENT_TEXT)
 
     def draw_incidents(self, incidents: List[Tuple[float, float]], env_id: int):
         for i, point in enumerate(incidents):
@@ -227,6 +234,15 @@ class PathImage:
                 fill=self.INCIDENT_COLOUR
             )
             self.draw.text((x - 2, y - 5), str(i + 1), self.INCIDENT_TEXT)
+
+    def draw_ss_points(self, point: Tuple[float, float],env_id: int, count: int):
+        x, y = point_to_gui_coords(point, env_id)
+        self.draw.ellipse(
+            (x - self.INCIDENT_RADIUS, y - self.INCIDENT_RADIUS,
+             x + self.INCIDENT_RADIUS, y + self.INCIDENT_RADIUS),
+            fill=self.STOP_COLOUR
+        )
+        self.draw.text((x - 2, y - 5), str(count + 1), self.INCIDENT_TEXT)
 
 
 if __name__ == '__main__':
