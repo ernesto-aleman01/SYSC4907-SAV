@@ -186,7 +186,7 @@ class CentralControl:
         rospy.Subscriber("stop_sign_detection", DetectionResults, self.handle_stop_sign)
 
         # Midpoint of the image width
-        MID_X = IMAGE_WIDTH / 3
+        MID_X = IMAGE_WIDTH / 2
 
         rate = rospy.Rate(10)  # 10hz
         while self.next_road_segment != RoadWarning.END_OF_PATH:
@@ -243,7 +243,7 @@ class CentralControl:
                     is_danger = False
                     # Get x-center, y near the bottom of bounding box
                     # cx, cy = (obj.xmax + obj.xmin) / 2, 0.5 * (obj.ymax - obj.ymin) + obj.ymin
-                    cx, cy = (obj.xmax + obj.xmin) / 2, obj.ymax
+                    cx, cy = obj.xmax + (obj.xmin / 2), obj.ymax
                     # Check if in danger zone
                     if ((cy > (self.l_slope * obj.xmax + self.l_int) or cy > (self.l_slope * obj.xmin + self.l_int)) and
                             (cy > (self.r_slope * obj.xmin + self.r_int) or cy > (self.r_slope * obj.xmax + self.r_int))
@@ -271,9 +271,10 @@ class CentralControl:
                 self.avoid.sort(key=lambda x: x.depth)
                 # Get closest
                 cur = self.avoid[0]
-                cx, cy = (math.floor((cur.xmax + cur.xmin) / 2), math.floor((cur.ymax + cur.ymin) / 2))
+                # cx, cy = (math.floor((cur.xmax + cur.xmin) / 2), math.floor((cur.ymax + cur.ymin) / 2))
+                cx, cy = math.floor(cur.xmax + (cur.xmin / 2)), math.floor(cur.ymax)
                 # Take action based on where the object approximately is
-                if self.lane_status == LaneBoundStatus.ONE_BOUND_LEFT or self.lane_status == LaneBoundStatus.NO_BOUNDS:
+                if cx < MID_X:
                     # Right side
                     self.yolo_steering = RIGHT_TURN_ANGLE
                     cv.putText(scene, 'Go Right', (cx, cy), FONT, FONT_SCALE, YELLOW)
@@ -281,7 +282,7 @@ class CentralControl:
                     # Left side
                     self.yolo_steering = LEFT_TURN_ANGLE
                     cv.putText(scene, 'Go Left', (cx, cy), FONT, FONT_SCALE, YELLOW)
-                cv.putText(scene, f'LANE:{self.lane_status}', (100, 100), FONT, FONT_SCALE, RED)
+
             elif CCState.STREET_RULE in self.cc_state:
                 # Actions taken when in Street Rule mode
                 if self.stop_state == StopState.STOPPING:
@@ -306,8 +307,8 @@ class CentralControl:
                         # Done the stop sign process
                         self.stop_state = StopState.NONE
                         self.cc_state.discard(CCState.STREET_RULE)
+
             if self.bridge.has_collided():
-            #if self.speed > STOPPED_SPEED and self.car_controls.brake != HOLD_BRAKE:
                 self.car_controls.is_manual_gear = True
                 self.car_controls.manual_gear = -1
                 time.sleep(1.4)
@@ -319,25 +320,21 @@ class CentralControl:
             # Steering priority descision
             if self.car_controls.manual_gear == -1:
                 self.car_controls.steering = self.reverse_steering
-            elif self.avoiding > 0:
-                # if self.avoiding == 3:
-                #     if self.car_controls.steering == LEFT_TURN_ANGLE:
-                #         self.car_controls.steering = RIGHT_TURN_ANGLE
-                #     if self.car_controls.steering == RIGHT_TURN_ANGLE:
-                #         self.car_controls.steering = LEFT_TURN_ANGLE
-                # else:
-                self.car_controls.steering = self.nav_steering
-                self.avoiding -= 1
             elif CCState.OBJECT_AVOID in self.cc_state:
-                self.car_controls.steering = self.yolo_steering
-                self.avoiding = 3
+                if self.avoiding < 5:
+                    self.car_controls.steering = self.yolo_steering
+                    self.avoiding += 1
+                else:
+                    self.car_controls.steering = self.nav_steering
             elif self.approachingIntersection:
                 self.car_controls.steering = self.nav_steering
             else:
-                if self.lane_status == LaneBoundStatus.NO_BOUNDS:
-                    self.car_controls.steering = 0.1
-                else:
-                    self.car_controls.steering = self.lane_steering
+                # if self.lane_status == LaneBoundStatus.NO_BOUNDS:
+                    # self.car_controls.steering = 0.1
+                # else:
+                    # self.car_controls.steering = self.lane_steering
+                self.car_controls.steering = self.nav_steering
+                self.avoiding = 0
 
             # Set Controls in simulator
             if self.ready:
