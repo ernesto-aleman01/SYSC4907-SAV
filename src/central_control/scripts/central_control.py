@@ -438,7 +438,7 @@ class CentralControl:
 
         self.approachingIntersection = RoadWarning(navigation_data.next_segment) == RoadWarning.INTERSECTION_AHEAD or \
                                        RoadSegmentType(navigation_data.current_segment) == RoadSegmentType.INTERSECTION
-
+        self.car_controls.steering = navigation_data.steering_angle
 
     def handle_throttling_data(self, throttling_data: Float64):
         self.car_controls.throttle = throttling_data.data
