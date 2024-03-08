@@ -110,18 +110,22 @@ class Navigation:
 # Can use either of the path methods by uncommenting one or the other if you want to test with the old path
 if __name__ == "__main__":
     path_file = rospy.get_param('/path_file')
-    path = Filepath(__file__).parent.parent / 'paths' / path_file
-    map = load_from_file(path)
-    # Assuming one path for the moment unless we plan on adding multiple per map in the future
-    #created_path = map.convert_path(0)
-
+    if path_file != "coastal.pickle":
+        path = Filepath(__file__).parent.parent / 'paths' / path_file
+        map = load_from_file(path)
+        # Assuming one path for the moment unless we plan on adding multiple per map in the future
+        created_path = map.convert_path(0)
+    else:
+        created_path = []
+        for i in range(100):
+            created_path.append((0.0, 0.0, RoadSegmentType.STRAIGHT))
     # Below is the old path that does not contain path notifications, meaning that intersections will not be navigated
     # properly, due to lidar obstacle detection. It is left in case there is interest in looking at it.
 
-    created_path = []
-    old_path_format = read_points(os.path.abspath(os.path.dirname(__file__)) + "/coords.txt")
-    for old_point in old_path_format:
-        created_path.append((old_point.coordinate[0], old_point.coordinate[1], RoadSegmentType.STRAIGHT))
+    # created_path = []
+    # old_path_format = read_points(os.path.abspath(os.path.dirname(__file__)) + "/coords.txt")
+    # for old_point in old_path_format:
+    #     created_path.append((old_point.coordinate[0], old_point.coordinate[1], RoadSegmentType.STRAIGHT))
 
     navigation = Navigation(look_ahead_distance=3.0, look_forward_gain=0.1, path=created_path, wheel_base=2.2)
     navigation.listener()
