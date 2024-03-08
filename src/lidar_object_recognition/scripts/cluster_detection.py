@@ -19,7 +19,7 @@ class ClusterDetection:
         self.min_num_points = int(param_file.readline())
         self.epsilon = float(param_file.readline())
 
-        self.running_tests = False  # Set to true if running tests
+        self.running_tests = True  # Set to true if running tests
         if self.running_tests:
             self.box_output_file = open(os.path.abspath(os.path.dirname(__file__)) + "/detected_boxes.txt", "w")
         self.bridge = get_bridge()
