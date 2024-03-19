@@ -167,7 +167,7 @@ class CentralControl:
         rospy.Subscriber("throttling", Float64, self.handle_throttling_data)
         rospy.Subscriber("object_detection", DetectionResults, self.handle_object_recognition)
         rospy.Subscriber("sensor/speed", Float64, self.handle_speed)
-        rospy.Subscriber("lidar_data", Float64MultiArray, self.handle_lidar_detection)
+        rospy.Subscriber("new_lidar_data", Float64MultiArray, self.handle_lidar_detection)
         rospy.Subscriber("stop_sign_detection", DetectionResults, self.handle_stop_sign)
 
         # Midpoint of the image width

@@ -52,6 +52,9 @@ class AirSimBridge(Bridge):
     def get_lidar_point_cloud(self):
         return self.client.getLidarData().point_cloud
 
+    def get_lidar_data(self):
+        return self.client.getLidarData()
+
     def get_speed(self):
         return self.client.getCarState().speed
 

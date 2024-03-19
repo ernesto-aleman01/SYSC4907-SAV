@@ -13,7 +13,6 @@
   <node name="lane_keep_assist" pkg="lane_keep_assist" type="send_lane.py" />
   <node name="object_detector" pkg="sign_car_recognition" type="object_detection.py" />
   <node name="stop_sign_detector" pkg="sign_car_recognition" type="stop_sign_detection.py" />
-  <node name="traffic_light_detector" pkg="sign_car_recognition" type="traffic_light_state.py" />
   <node name="object_detect" pkg="lidar_object_recognition_2" type="new_lidar_object_detect.py"/>
 
   <node name="cruise_control" pkg="cruise_control" type="cruise_control.py" />
@@ -27,4 +26,5 @@
   <node name="segmented_image" pkg="sensors" type="segmented_image.py" />
   <node name="fast_camera" pkg="sensors" type="fast_camera.py" />
   <node name="logging" pkg="sensors" type="vehicle_logging.py" if="$(arg log)" /> <!-- Launch logging node if flag is set -->
+  <node type="rviz" name="rviz" pkg="rviz" args="-d $(find rviz)/rviz/config_file.rviz" />
 </launch>
