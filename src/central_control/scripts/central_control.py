@@ -329,12 +329,11 @@ class CentralControl:
             elif self.approachingIntersection:
                 self.car_controls.steering = self.nav_steering
             else:
-                # if self.lane_status == LaneBoundStatus.NO_BOUNDS:
-                    # self.car_controls.steering = 0.1
-                # else:
-                    # self.car_controls.steering = self.lane_steering
-                self.car_controls.steering = self.nav_steering
-                self.avoiding = 0
+                if self.lane_status == LaneBoundStatus.NO_BOUNDS:
+                    self.car_controls.steering = 0.1
+                else:
+                    self.car_controls.steering = self.lane_steering
+
 
             # Set Controls in simulator
             if self.ready:
