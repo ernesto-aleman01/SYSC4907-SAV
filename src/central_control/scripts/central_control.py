@@ -80,8 +80,8 @@ class StopState(Enum):
 
 
 ROADWARNINGSPEEDS = {RoadWarning.TURN_AHEAD: 2.5, RoadWarning.INTERSECTION_AHEAD: 2.5,
-                     RoadWarning.STRAIGHT_ROAD_AHEAD: 1.0, RoadWarning.END_OF_PATH: 0}
-ROADSEGMENTSPEEDS = {RoadSegmentType.STRAIGHT: 1.0, RoadSegmentType.INTERSECTION: 2.5, RoadSegmentType.TURN: 2.5}
+                     RoadWarning.STRAIGHT_ROAD_AHEAD: 5.0, RoadWarning.END_OF_PATH: 0}
+ROADSEGMENTSPEEDS = {RoadSegmentType.STRAIGHT: 5.0, RoadSegmentType.INTERSECTION: 2.5, RoadSegmentType.TURN: 2.5}
 
 INITIAL_COOLDOWN = 10
 INITIAL_SPEED = 0
@@ -312,9 +312,6 @@ class CentralControl:
                 self.car_controls.is_manual_gear = True
                 self.car_controls.manual_gear = -1
                 time.sleep(1.4)
-                self.car_controls.brake = HOLD_BRAKE
-                self.car_controls.is_manual_gear = False
-                self.car_controls.manual_gear = 1
             else:
                 self.car_controls.is_manual_gear = False
                 self.car_controls.manual_gear = 1
