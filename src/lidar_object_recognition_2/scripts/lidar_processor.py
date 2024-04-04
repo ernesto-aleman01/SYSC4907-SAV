@@ -58,7 +58,7 @@ class LidarProcessor:
         o3d_point_cloud = o3d.geometry.PointCloud()
         translated_points = []
         for point in lidar_points:
-            if point.z > 0.1:
+            if point.z > 0.5:
                 translated_points.append([point.x, point.y, point.z])
 
         o3d_point_cloud.points = o3d.utility.Vector3dVector(translated_points)

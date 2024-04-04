@@ -182,7 +182,7 @@ class CentralControl:
         rospy.Subscriber("throttling", Float64, self.handle_throttling_data)
         rospy.Subscriber("object_detection", DetectionResults, self.handle_object_recognition)
         rospy.Subscriber("sensor/speed", Float64, self.handle_speed)
-        rospy.Subscriber("lidar_data", Float64MultiArray, self.handle_lidar_detection)
+        rospy.Subscriber("new_lidar_data", Float64MultiArray, self.handle_lidar_detection)
         rospy.Subscriber("stop_sign_detection", DetectionResults, self.handle_stop_sign)
 
         # Midpoint of the image width
@@ -312,7 +312,6 @@ class CentralControl:
                 self.car_controls.is_manual_gear = True
                 self.car_controls.manual_gear = -1
                 time.sleep(1.4)
-                #self.car_controls.brake = HOLD_BRAKE
             else:
                 self.car_controls.is_manual_gear = False
                 self.car_controls.manual_gear = 1
@@ -335,7 +334,7 @@ class CentralControl:
                     # self.car_controls.steering = self.lane_steering
                 self.car_controls.steering = self.nav_steering
                 self.avoiding = 0
-
+            self.car_controls.steering = self.nav_steering
             # Set Controls in simulator
             if self.ready:
                 self.bridge.set_controls(self.car_controls)
@@ -502,10 +501,10 @@ class CentralControl:
             # Lidar points are relative to the car. The "y" dimension, index 1, refers to left or right.
             # The "x" dimension, index 0, refers to the horizontal distance from the car.
             if closest_aabb_vector[1] > 0:
-                self.car_controls.steering = -(min(MAX_TURN_ANGLE, 0.125 / closest_aabb_vector[0]))
+                #self.car_controls.steering = -(min(MAX_TURN_ANGLE, 0.125 / closest_aabb_vector[0]))
                 self.lidar_left = True
             elif closest_aabb_vector[1] < 0:
-                self.car_controls.steering = min(MAX_TURN_ANGLE, 0.125 / closest_aabb_vector[0])
+                #self.car_controls.steering = min(MAX_TURN_ANGLE, 0.125 / closest_aabb_vector[0])
                 self.lidar_right = True
 
 
